@@ -108,7 +108,7 @@ h1,h2,h3,p{margin:0}
 
 .cookie-stage{position:relative;height:104px;display:flex;align-items:center;justify-content:center;margin-bottom:4px}
 .cookie-pic{
-  position:relative;width:118px;height:96px;
+  position:relative;width:126px;height:102px;
   transform-origin:50% 70%;
   animation:cookieFloat 4s ease-in-out infinite;
   filter:drop-shadow(0 6px 8px rgba(160,120,50,.10));
@@ -169,16 +169,13 @@ h1,h2,h3,p{margin:0}
 .fortune-open-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:11px;border-bottom:1px solid #EADFC8}
 .fortune-open-head .kicker{color:#AD9669}
 .fortune-open-head b{color:#8C743F;font-weight:700;letter-spacing:.06em}
-.mini-cookie{font-size:14px;opacity:.85}
+.mini-cookie{width:20px;height:18px;display:inline-flex;opacity:.8}
+.mini-cookie img{width:100%;height:100%;object-fit:contain}
 .fortune-text{
   font-size:16px;line-height:1.72;color:#4A3E29;letter-spacing:-.012em;
-  padding:14px 6px 4px;position:relative;
+  padding:14px 2px 4px;position:relative;
   font-weight:500;
   word-break:keep-all;
-}
-.fortune-text::before{
-  content:"“";position:absolute;left:-2px;top:-2px;font-size:34px;color:#E3CE9F;
-  font-family:Georgia,serif;line-height:1;
 }
 .fortune-actions{display:flex;justify-content:flex-end;margin-top:12px}
 .ad-btn{
