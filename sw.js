@@ -1,5 +1,5 @@
 /* 하이루티 HiRouti — 오프라인 껍데기 캐시 */
-const CACHE = 'hirouti-v2';
+const CACHE = 'hirouti-v3';
 const SHELL = [
   './',
   './index.html',
