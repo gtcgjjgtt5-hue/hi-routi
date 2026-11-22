@@ -322,22 +322,28 @@ h1,h2,h3,p{margin:0}
 
 .chart-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
 .chart-avg{font-size:10.5px;color:var(--faint);letter-spacing:.04em;font-variant-numeric:tabular-nums}
-.chart{position:relative;height:152px;padding-top:6px}
-.chart-grid{position:absolute;inset:6px 0 22px;display:flex;flex-direction:column;justify-content:space-between}
+.chart{position:relative;height:168px;padding-top:6px}
+.chart-grid{position:absolute;inset:6px 0 26px;display:flex;flex-direction:column;justify-content:space-between}
 .chart-grid i{display:block;border-top:1px dashed #EBE6DA}
 .bars{position:absolute;inset:6px 0 0;display:flex;align-items:flex-end;gap:8px}
-.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:7px}
-.bar-val{font-size:8.5px;color:#B3ADA1;font-variant-numeric:tabular-nums;letter-spacing:.02em;opacity:0;transition:opacity .2s}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;gap:8px;position:relative}
+.bar-track{flex:1;width:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.bar-stack{
+  width:100%;height:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
+  transition:height .85s cubic-bezier(.22,.9,.3,1);
+}
+.bar-val{font-size:8.5px;color:#B3ADA1;font-variant-numeric:tabular-nums;letter-spacing:.02em;padding-bottom:4px;opacity:0;transition:opacity .2s}
 .bar:hover .bar-val{opacity:1}
 .bar-fill{
-  width:100%;max-width:26px;border-radius:5px 5px 3px 3px;
-  background:linear-gradient(180deg,#DCD4C2,#D3CAB6);
-  height:0;transition:height .8s cubic-bezier(.22,.9,.3,1);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.5);
+  width:100%;max-width:26px;flex:none;
+  border-radius:5px 5px 3px 3px;
+  background:linear-gradient(180deg,#DDD5C3,#D2C9B4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
 }
-.bar.today .bar-fill{background:linear-gradient(180deg,#D9AE68,#C4954B);box-shadow:0 4px 10px -6px rgba(160,120,50,.9)}
+.bar-stack .bar-fill{flex:1;min-height:2px}
+.bar.today .bar-fill{background:linear-gradient(180deg,#DCB26E,#C4954B);box-shadow:0 4px 10px -6px rgba(160,120,50,.9)}
 .bar.today .bar-val{opacity:1;color:#A98B4D}
-.bar.sample .bar-fill{background:linear-gradient(180deg,#DED7C8,#D0C8B6);opacity:.85}
+.bar.sample .bar-fill{background:linear-gradient(180deg,#DED7C8,#D0C8B6);opacity:.9}
 .bar-day{font-size:9.5px;color:#B0AAA0;letter-spacing:.04em;height:14px}
 .bar.today .bar-day{color:#8E7444;font-weight:700}
 .chart-note{font-size:9.5px;line-height:1.6;color:#B7B1A4;margin-top:12px;letter-spacing:-.005em;word-break:keep-all}

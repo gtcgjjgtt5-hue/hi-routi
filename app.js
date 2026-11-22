@@ -357,32 +357,36 @@
     // 주간 막대
     const bars = $('#bars');
     const data = weekData();
-    const maxPct = 100;
     bars.innerHTML = '';
     data.forEach((d) => {
       const wrap = document.createElement('div');
       wrap.className = 'bar' + (d.isToday ? ' today' : '') + (d.sample ? ' sample' : '');
 
+      const track = document.createElement('div');
+      track.className = 'bar-track';
+
+      const stack = document.createElement('div');
+      stack.className = 'bar-stack';
+
       const val = document.createElement('span');
       val.className = 'bar-val';
       val.textContent = d.pct + '%';
 
-      const track = document.createElement('div');
-      track.style.cssText = 'width:100%;height:118px;display:flex;align-items:flex-end;justify-content:center';
-
       const fill = document.createElement('div');
       fill.className = 'bar-fill';
-      track.appendChild(fill);
+
+      stack.append(val, fill);
+      track.appendChild(stack);
 
       const day = document.createElement('span');
       day.className = 'bar-day';
       day.textContent = d.label;
 
-      wrap.append(val, track, day);
+      wrap.append(track, day);
       bars.appendChild(wrap);
 
       requestAnimationFrame(() => {
-        fill.style.height = Math.max(d.pct / maxPct * 100, d.pct > 0 ? 4 : 2) + '%';
+        stack.style.height = Math.max(d.pct, d.pct > 0 ? 3 : 1.5) + '%';
       });
     });
 
