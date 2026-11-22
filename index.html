@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>하이루티 · HiRouti</title>
+<meta name="description" content="하루를 시작하는 가장 쉬운 인사. 떡메모지 체크리스트와 오늘의 포춘쿠키, 하이루티.">
+<meta name="theme-color" content="#FAF8F2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="하이루티">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="stage">
+  <main class="app">
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark"><img src="assets/routi-128.png" alt="루티" width="40" height="40"></span>
+        <span class="brand-text">
+          <span class="brand-name">하이루티</span>
+          <span class="brand-sub">HI + ROUTINE</span>
+        </span>
+      </div>
+      <span class="brand-today" id="topDate">11.23 MON</span>
+    </header>
+
+    <!-- ─── 오늘 ─────────────────────────────────────────────── -->
+    <section class="view active" id="viewToday">
+      <p class="greeting">하이! 오늘도 루티와 함께해요.</p>
+
+      <div class="fortune" id="fortune" role="button" tabindex="0" aria-label="오늘의 쿠키 열기">
+        <!-- 닫힌 쿠키 -->
+        <div class="fortune-closed" id="fortuneClosed">
+          <div class="cookie-stage">
+            <svg class="cookie" viewBox="0 0 120 104" aria-hidden="true">
+              <g class="cookie-half left">
+                <path d="M58 30 Q50 17 35 15 Q11 13 9 39 Q7 65 29 80 Q45 90 58 86 Z"/>
+                <path class="crease" d="M14 42 Q30 52 56 58" />
+              </g>
+              <g class="cookie-half right">
+                <path d="M62 30 Q70 17 85 15 Q109 13 111 39 Q113 65 91 80 Q75 90 62 86 Z"/>
+                <path class="crease" d="M106 42 Q90 52 64 58" />
+              </g>
+            </svg>
+            <span class="crumb c1"></span>
+            <span class="crumb c2"></span>
+            <span class="crumb c3"></span>
+            <span class="crumb c4"></span>
+            <span class="spark">✧</span>
+          </div>
+          <p class="fortune-kicker">TODAY&rsquo;S FORTUNE</p>
+          <button class="open-btn" id="openBtn" type="button">오늘의 쿠키 열기</button>
+          <p class="fortune-hint">톡, 눌러서 깨뜨려 보세요</p>
+        </div>
+
+        <!-- 열린 쿠키 -->
+        <div class="fortune-open" id="fortuneOpen" aria-live="polite">
+          <div class="fortune-open-head">
+            <span class="kicker">오늘의 쿠키 · <b id="fortuneDate">11.23</b></span>
+            <span class="mini-cookie" aria-hidden="true">🥠</span>
+          </div>
+          <p class="fortune-text" id="fortuneText"></p>
+          <div class="fortune-actions">
+            <button class="ad-btn" id="adBtn" type="button"><span class="ad-tag">AD</span> 광고 보고 쿠키 한 번 더 뽑기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 떡메모지 패드 -->
+      <div class="pad" id="pad">
+        <div class="pad-head">
+          <span class="pad-date">DATE<b id="padDate">11.23</b></span>
+          <span class="pad-label">CHECKLIST</span>
+        </div>
+        <div class="pad-sub">
+          <span id="padTitle">오늘의 체크리스트</span>
+          <span class="pad-count" id="padCount">0 / 0</span>
+        </div>
+        <ul class="list" id="list"></ul>
+        <form class="add" id="addForm" autocomplete="off">
+          <span class="add-plus" aria-hidden="true">+</span>
+          <input id="addInput" type="text" maxlength="60" placeholder="할 일을 가볍게 적어 보세요" aria-label="할 일 추가" enterkeyhint="done">
+          <button class="add-go" type="submit" aria-label="추가">↵</button>
+        </form>
+        <p class="pad-empty" id="padEmpty" hidden>아직 비어 있어요. 한 줄 적어 볼까요?</p>
+      </div>
+
+      <p class="foot-note">체크는 자동 저장돼요 · 하루가 바뀌면 새 메모지</p>
+    </section>
+
+    <!-- ─── 나의 기록 ─────────────────────────────────────────── -->
+    <section class="view" id="viewRecord" hidden>
+      <p class="greeting">루티가 오늘 하루를 세어 봤어요.</p>
+
+      <div class="card ring-card">
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52"/>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-pct" id="ringPct">0%</span>
+            <span class="ring-cap">오늘의 달성률</span>
+          </div>
+        </div>
+        <p class="ring-desc" id="ringDesc">오늘의 체크리스트는 아직 비어 있어요</p>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-head">
+          <span class="kicker">최근 7일</span>
+          <span class="chart-avg" id="chartAvg">평균 0%</span>
+        </div>
+        <div class="chart" id="chart">
+          <div class="chart-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="bars" id="bars"></div>
+        </div>
+        <p class="chart-note">지난날 막대는 프로토타입용 샘플 기록이에요. 오늘 막대는 체크할 때마다 바로 바뀝니다.</p>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><span class="stat-num" id="statDone">0</span><span class="stat-cap">오늘 한 일</span></div>
+        <div class="stat"><span class="stat-num" id="statLeft">0</span><span class="stat-cap">남은 일</span></div>
+        <div class="stat"><span class="stat-num" id="statBest">—</span><span class="stat-cap">이번 주 최고</span></div>
+      </div>
+    </section>
+
+    <nav class="tabbar" aria-label="주요 화면">
+      <button class="tab active" data-view="today" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M8.5 8.5h7M8.5 12h5"/></svg>
+        <span>오늘</span>
+      </button>
+      <button class="tab" data-view="record" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5V13M9.8 19.5V7.5M15.1 19.5v-8M20.4 19.5V4.5"/></svg>
+        <span>나의 기록</span>
+      </button>
+    </nav>
+
+    <!-- 광고 모달 -->
+    <div class="adder" id="adder" hidden>
+      <div class="adder-card" role="dialog" aria-modal="true" aria-label="광고 시청">
+        <span class="adder-badge">AD</span>
+        <p class="adder-title">루티가 광고 보는 중…</p>
+        <p class="adder-sub">조금만 기다리면 쿠키가 하나 더 나와요</p>
+        <div class="adder-bar"><span id="adderBar"></span></div>
+        <p class="adder-count" id="adderCount">2</p>
+        <button class="adder-skip" id="adderSkip" type="button">광고 닫기</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
