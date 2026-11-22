@@ -357,6 +357,19 @@ h1,h2,h3,p{margin:0}
 .stat-num{font-size:18px;font-weight:700;color:#4A443A;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .stat-cap{font-size:9px;letter-spacing:.1em;color:var(--faint);white-space:nowrap}
 
+.note-card{
+  margin-top:auto;
+  border:1px dashed #E3D9C4;
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(253,250,242,.9),rgba(250,246,236,.9));
+  padding:14px 16px 15px;
+  margin-bottom:6px;
+}
+.note-card .kicker{color:#B6A075;font-size:8.5px}
+.note-card p{
+  font-size:12px;line-height:1.65;color:#7C7361;margin-top:7px;letter-spacing:-.005em;word-break:keep-all;
+}
+
 /* ── 탭바 ─────────────────────────────────────────────── */
 .tabbar{
   position:fixed;bottom:0;left:50%;transform:translateX(-50%);
