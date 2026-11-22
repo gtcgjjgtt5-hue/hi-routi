@@ -39,16 +39,10 @@
         <!-- 닫힌 쿠키 -->
         <div class="fortune-closed" id="fortuneClosed">
           <div class="cookie-stage">
-            <svg class="cookie" viewBox="0 0 120 104" aria-hidden="true">
-              <g class="cookie-half left">
-                <path d="M58 30 Q50 17 35 15 Q11 13 9 39 Q7 65 29 80 Q45 90 58 86 Z"/>
-                <path class="crease" d="M14 42 Q30 52 56 58" />
-              </g>
-              <g class="cookie-half right">
-                <path d="M62 30 Q70 17 85 15 Q109 13 111 39 Q113 65 91 80 Q75 90 62 86 Z"/>
-                <path class="crease" d="M106 42 Q90 52 64 58" />
-              </g>
-            </svg>
+            <div class="cookie-pic" aria-hidden="true">
+              <img class="cookie-half left" src="assets/cookie.png" alt="">
+              <img class="cookie-half right" src="assets/cookie.png" alt="">
+            </div>
             <span class="crumb c1"></span>
             <span class="crumb c2"></span>
             <span class="crumb c3"></span>
@@ -87,7 +81,9 @@
         <form class="add" id="addForm" autocomplete="off">
           <span class="add-plus" aria-hidden="true">+</span>
           <input id="addInput" type="text" maxlength="60" placeholder="할 일을 가볍게 적어 보세요" aria-label="할 일 추가" enterkeyhint="done">
-          <button class="add-go" type="submit" aria-label="추가">↵</button>
+          <button class="add-go" type="submit" aria-label="추가">
+            <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M3 8h9M8.4 4.4 12 8l-3.6 3.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
         </form>
         <p class="pad-empty" id="padEmpty" hidden>아직 비어 있어요. 한 줄 적어 볼까요?</p>
       </div>

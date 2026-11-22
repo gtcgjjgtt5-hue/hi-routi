@@ -9,6 +9,7 @@ const SHELL = [
   './assets/icon-192.png',
   './assets/icon-512.png',
   './assets/routi-128.png',
+  './assets/cookie.png',
   './assets/apple-touch-icon.png'
 ];
 
