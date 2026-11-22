@@ -73,7 +73,7 @@ h1,h2,h3,p{margin:0}
 
 /* ── 공통 뷰 ──────────────────────────────────────────── */
 .view{padding:6px 20px 8px;display:none}
-.view.active{display:block;animation:viewIn .34s cubic-bezier(.22,.8,.3,1) both}
+.view.active{display:flex;flex-direction:column;flex:1;animation:viewIn .34s cubic-bezier(.22,.8,.3,1) both}
 @keyframes viewIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 
 .greeting{
@@ -285,6 +285,17 @@ h1,h2,h3,p{margin:0}
 .foot-note{
   text-align:center;font-size:10px;color:#B8B2A6;letter-spacing:.02em;margin:16px 0 6px;
 }
+.routi-foot{
+  margin-top:auto;padding:10px 0 6px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.routi-foot img{
+  width:96px;height:96px;object-fit:contain;
+  mix-blend-mode:multiply;opacity:.96;
+  animation:routiBreathe 5.5s ease-in-out infinite;
+}
+@keyframes routiBreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.routi-foot p{font-size:10px;letter-spacing:.08em;color:#BDB7AA}
 
 /* ── 기록 ─────────────────────────────────────────────── */
 .card{
