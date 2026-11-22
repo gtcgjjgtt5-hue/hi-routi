@@ -50,7 +50,7 @@ h1,h2,h3,p{margin:0}
   background:
     radial-gradient(120% 60% at 50% -10%, #FFFDF8 0%, rgba(255,253,248,0) 60%),
     var(--paper);
-  padding-bottom:96px;
+  padding-bottom:82px;
 }
 
 /* ── 상단 ─────────────────────────────────────────────── */
