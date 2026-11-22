@@ -3,6 +3,8 @@
 > **하루를 시작하는 가장 쉬운 인사**
 > Hi + Routine = HiRouti (안녕, 나의 루틴!)
 
+**바로 열기 → https://gtcgjjgtt5-hue.github.io/hi-routi/**
+
 ADHD-friendly한 떡메모지 체크리스트 + 도파민 포춘쿠키 투두 웹앱 프로토타입입니다.
 시간표도, 복잡한 카테고리도 없이 **적고, 체크하고, 오늘의 쿠키를 깨는** 세 가지 동작만 있습니다.
 
@@ -18,7 +20,7 @@ ADHD-friendly한 떡메모지 체크리스트 + 도파민 포춘쿠키 투두 �
 
 | 오늘 | 나의 기록 |
 | --- | --- |
-| 떡메모지 패드 + 오늘의 운세 | 달성률 링 + 7일 그래프 |
+| ![오늘](screenshots/today.png) | ![나의 기록](screenshots/record.png) |
 
 ## 실행
 
