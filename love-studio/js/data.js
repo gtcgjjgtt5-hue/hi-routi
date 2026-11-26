@@ -9,7 +9,7 @@ export const APP_TITLE = '사랑의 스튜디오';
 export const HOST_PIN = '1990'; // 사회자 입장 비밀번호 (README에 바꾸는 법 있음)
 export const MAX_MSG = 300;
 export const LOUNGE_MAX = 2000; // 라운지 입력 — 긴 프로필 목록도 붙여넣을 수 있게
-export const ANN_MAX = 3000; // 전체 공지(방송) — 25명 프로필 목록이 통째로 들어가도록
+export const ANN_MAX = 3000; // 전체 공지(방송) — 26명 프로필 목록이 통째로 들어가도록
 
 export const ROUNDS = [
   {
@@ -74,6 +74,8 @@ export const ROSTER = [
   { id: 'm11', side: 'm', num: 11, year: 1981, pin: '3819' },
   { id: 'm12', side: 'm', num: 12, year: 1981, pin: '2513' },
   { id: 'm13', side: 'm', num: 13, year: 1992, pin: '7140' },
+  // 남자 14호 (누락 보충 · 2026-11-26)
+  { id: 'm14', side: 'm', num: 14, year: 2000, pin: '7662' },
   // 여자 1~10호 (출생연도 순)
   { id: 'w1', side: 'w', num: 1, year: 1983, pin: '6072' },
   { id: 'w2', side: 'w', num: 2, year: 1987, pin: '2941' },

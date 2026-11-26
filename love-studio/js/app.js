@@ -24,7 +24,7 @@ import {
   parseInviteCode,
   checkPin,
   pageBaseUrl,
-} from './data.js?v=4';
+} from './data.js?v=5';
 import { createStore, demoTemplate } from './store.js?v=3';
 import {
   computeMatches,
@@ -34,7 +34,7 @@ import {
   picksOf,
   chosenRank,
   pairKey,
-} from './matching.js?v=3';
+} from './matching.js?v=4';
 
 /* ---------------- 작은 도구들 ---------------- */
 

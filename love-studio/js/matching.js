@@ -2,7 +2,7 @@
    사랑의 스튜디오 — 사랑의 작대기 (투표 · 매칭 · 관계도)
    ============================================================ */
 
-import { MEN, WOMEN, byId, nameOf, shortYear } from './data.js?v=3';
+import { MEN, WOMEN, byId, nameOf, shortYear } from './data.js?v=5';
 
 /** 투표 원본을 안전한 형태로 */
 export function normalizeVote(raw) {
