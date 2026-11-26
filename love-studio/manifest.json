@@ -1,0 +1,15 @@
+{
+  "name": "사랑의 스튜디오",
+  "short_name": "사랑의 스튜디오",
+  "description": "남자 10명 · 여자 10명, 번호로만 만나는 90년대 감성 소개팅 쇼",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FFF7EA",
+  "theme_color": "#FFF7EA",
+  "lang": "ko",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
