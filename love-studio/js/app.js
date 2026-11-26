@@ -1505,6 +1505,12 @@ function submitPin() {
 }
 
 function closeChat() {
+  if (roomSub) {
+    try {
+      roomSub();
+    } catch (_) {}
+    roomSub = null;
+  }
   S.chat = null;
   S.nearBottom = true;
   S.scrollTo = 0;
