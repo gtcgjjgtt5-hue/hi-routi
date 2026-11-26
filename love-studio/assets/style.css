@@ -2147,3 +2147,219 @@ p {
   background: #e8dccd;
   border-radius: 4px;
 }
+
+/* ---------------- 2기 신청서 (명단 탭) ---------------- */
+
+.source-switch {
+  display: flex;
+  gap: 5px;
+  padding: 4px;
+  margin: 2px 0 12px;
+  background: #f3ece3;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+}
+.source-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 9px 6px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+.source-btn.on {
+  background: var(--paper);
+  color: var(--pink-deep);
+  box-shadow: 0 1px 0 rgba(58, 46, 42, 0.06), 0 5px 12px -9px rgba(58, 46, 42, 0.6);
+}
+
+.apply-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 9px 8px 11px;
+  background: #fbf6ee;
+  border: 1.5px dashed #e3d3c1;
+  border-radius: 12px;
+}
+.apply-url {
+  flex: 1;
+  min-width: 0;
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.apply-link-row .mini-btn {
+  flex: 0 0 auto;
+}
+
+.s2-copy-group {
+  margin-bottom: 12px;
+}
+.s2-copy-group .btn.block {
+  margin-bottom: 7px;
+}
+.btn.s2-copy-m {
+  background: var(--blue-soft);
+  color: var(--blue-deep);
+  border-color: rgba(91, 155, 232, 0.35);
+}
+.btn.s2-copy-w {
+  background: var(--pink-soft);
+  color: var(--pink-deep);
+  border-color: rgba(242, 114, 159, 0.3);
+}
+
+.app-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 14px 2px 7px;
+  padding-bottom: 5px;
+  border-bottom: 1.5px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.app-group-head b {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.app-card {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 15px;
+  padding: 11px 12px 9px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 0 rgba(58, 46, 42, 0.05);
+}
+.app-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.app-main b {
+  font-size: 13.5px;
+}
+.app-main b small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.app-main .handle {
+  font-size: 11.5px;
+  color: var(--blue-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-pin {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f1e8;
+  font-size: 9px;
+  line-height: 1.3;
+  color: var(--muted);
+  text-align: center;
+}
+.app-pin b {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+.app-quick {
+  margin: 6px 0 7px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+.app-btns {
+  display: flex;
+  gap: 6px;
+}
+.mini-btn.danger {
+  background: #fff1f5;
+  color: var(--red);
+  border-color: rgba(228, 56, 107, 0.2);
+}
+.app-detail {
+  margin-top: 8px;
+  border-top: 1px dashed #ecdccb;
+  padding-top: 6px;
+}
+.app-detail summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.app-detail summary::-webkit-details-marker {
+  display: none;
+}
+.app-detail summary::after {
+  content: ' ▾';
+}
+.app-detail[open] summary::after {
+  content: ' ▴';
+}
+.app-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px 10px;
+  margin-top: 8px;
+}
+.app-cell span {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+.app-cell b {
+  font-size: 12px;
+  font-weight: 500;
+  word-break: break-all;
+}
+.app-important {
+  margin-top: 9px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fbf6ee;
+}
+.app-important span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.app-important p {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 360px) {
+  .source-btn {
+    font-size: 11.5px;
+  }
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+}

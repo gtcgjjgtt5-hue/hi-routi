@@ -9,9 +9,19 @@
 const ROOT = 'studio'; // Realtime Database 안의 최상위 키
 const LS_KEY = 'love-studio.demo.v2';
 
-export async function createStore() {
+export async function createStore(opts = {}) {
   const cfg = (typeof window !== 'undefined' && window.FIREBASE_CONFIG) || {};
-  if (cfg && cfg.databaseURL) {
+  // 주소에 ?demo=1 을 붙이면 Firebase 설정이 있어도 체험 모드로 엽니다.
+  // (신청 페이지와 사회자 화면을 같은 기기에서 나란히 시험할 때 사용)
+  let forceDemo = opts.demo === true;
+  if (!forceDemo && typeof window !== 'undefined') {
+    try {
+      forceDemo = new URLSearchParams(window.location.search).has('demo');
+    } catch (_) {
+      forceDemo = false;
+    }
+  }
+  if (!forceDemo && cfg && cfg.databaseURL) {
     try {
       return await firebaseStore(cfg);
     } catch (err) {
@@ -21,7 +31,9 @@ export async function createStore() {
       return s;
     }
   }
-  return localStore();
+  const s = localStore();
+  if (forceDemo) s.note = '주소의 ?demo=1 로 체험 모드로 열었어요';
+  return s;
 }
 
 /* ---------------- 체험 모드 (localStorage) ---------------- */

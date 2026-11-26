@@ -25,7 +25,17 @@ import {
   checkPin,
   pageBaseUrl,
 } from './data.js?v=5';
-import { createStore, demoTemplate } from './store.js?v=3';
+import { createStore, demoTemplate } from './store.js?v=4';
+import {
+  APPLY_PATH,
+  APPLY_URL,
+  numberedApplications,
+  countApplications,
+  pinOf,
+  oneLineProfile,
+  profileText,
+  handleText,
+} from './applications.js?v=1';
 import {
   computeMatches,
   tallyVotes,
@@ -82,9 +92,11 @@ const S = {
     dmMine: {},
     dmAll: {},
     roomChat: {},
+    applications: {},
   },
   tab: 'lounge',
   hostTab: 'control',
+  rosterSource: 's1', // 명단 탭: 's1' 1기 명단 · 's2' 2기 신청서
   chat: null,
   entry: { step: 'start', side: 'm', num: null, pin: '', code: '', hostPin: '', error: '' },
   drafts: { lounge: '', chat: '', ann: '' },
@@ -225,7 +237,11 @@ function login(me, opts = {}) {
   // 초대 링크/파라미터로 들어온 흔적은 주소창에서 지워요(새로고침 때 재입장 방지)
   try {
     if (/[?&](code|c|host)=/.test(location.search)) {
-      history.replaceState(null, '', location.pathname + location.hash.replace('#host', ''));
+      let keep = '';
+      try {
+        if (new URLSearchParams(location.search).has('demo')) keep = '?demo=1';
+      } catch (_) {}
+      history.replaceState(null, '', location.pathname + keep + location.hash.replace('#host', ''));
     }
   } catch (_) {}
   S.scrollTo = 0;
@@ -310,6 +326,7 @@ function unsubAll() {
   S.data.dmMine = {};
   S.data.dmAll = {};
   S.data.roomChat = {};
+  S.data.applications = {};
 }
 
 function subscribeFor(me) {
@@ -347,6 +364,9 @@ function subscribeFor(me) {
     });
     sub('dm', (v) => {
       S.data.dmAll = v || {};
+    });
+    sub(APPLY_PATH, (v) => {
+      S.data.applications = v || {};
     });
   } else {
     sub(`votes/${me.pid}`, (v) => {
@@ -1134,10 +1154,22 @@ function controlView() {
 }
 
 function rosterView() {
+  const apps = S.data.applications || {};
+  const { m, w } = countApplications(apps);
+  return `<section class="pad">
+    <div class="source-switch">
+      <button class="source-btn ${S.rosterSource === 's1' ? 'on' : ''}" data-act="roster-source" data-source="s1">1기 명단</button>
+      <button class="source-btn ${S.rosterSource === 's2' ? 'on' : ''}" data-act="roster-source" data-source="s2">⏳ 2기 신청서 (${m + w})</button>
+    </div>
+    ${S.rosterSource === 's2' ? s2RosterSection(apps) : s1RosterSection()}
+  </section>`;
+}
+
+function s1RosterSection() {
   const now = Date.now();
   const votes = S.data.votes || {};
   const dmAll = S.data.dmAll || {};
-  return `<section class="pad">
+  return `
     <div class="section-head">
       <h2>참가자 명단</h2>
       <span class="muted">${onlineCount()}명 접속 · ${Object.keys(votes).length}명 투표</span>
@@ -1187,8 +1219,95 @@ function rosterView() {
         </div>`;
       }).join('')}
     </div>
-    <p class="section-note center">${fmtDateTime(now)} 기준</p>
-  </section>`;
+    <p class="section-note center">${fmtDateTime(now)} 기준</p>`;
+}
+
+/* ---------------- 2기 신청서 ---------------- */
+
+function s2RosterSection(apps) {
+  const { m, w } = countApplications(apps);
+  const men = numberedApplications(apps, 'm');
+  const women = numberedApplications(apps, 'w');
+  const total = m + w;
+  return `
+    <div class="section-head" style="margin-top:2px">
+      <h2>⏳ 2기 신청서</h2>
+      <span class="muted">남 ${m}명 · 여 ${w}명</span>
+    </div>
+    <p class="section-note">출생연도순으로 자동 번호가 붙어요. 신청서를 지우면 바로 사라지고 되돌릴 수 없어요.</p>
+
+    <div class="apply-link-row">
+      <span class="apply-url" title="${esc(APPLY_URL)}">${esc(APPLY_URL.replace(/^https?:\/\//, ''))}</span>
+      <button class="mini-btn" data-act="copy-apply-link">🔗 신청 링크 복사</button>
+    </div>
+
+    ${
+      total
+        ? `<div class="s2-copy-group">
+            <button class="btn small block s2-copy-m" data-act="copy-s2-profiles" data-side="m">🩵 남자 한 줄 프로필 전체 복사</button>
+            <button class="btn small block s2-copy-w" data-act="copy-s2-profiles" data-side="w">🤍 여자 한 줄 프로필 전체 복사</button>
+            <button class="btn small block ghost" data-act="copy-s2-handles">📋 스레드 아이디 목록 복사</button>
+          </div>
+          <div class="app-group-head"><span>🩵 남자</span><b>${m}명</b></div>
+          ${men.length ? men.map(appCard).join('') : `<p class="section-note center">아직 남자 신청서가 없어요</p>`}
+          <div class="app-group-head"><span>🤍 여자</span><b>${w}명</b></div>
+          ${women.length ? women.map(appCard).join('') : `<p class="section-note center">아직 여자 신청서가 없어요</p>`}`
+        : `${emptyState('아직 2기 신청서가 없어요', '위 신청 링크를 스레드에 올리면 여기에 자동으로 쌓여요')}
+          <p class="section-note center">신청서는 성별·출생연도순으로 정리되고 한 줄 프로필로 바로 복사할 수 있어요</p>`
+    }`;
+}
+
+function appCard(a) {
+  const pin = pinOf(a);
+  const quick = [a.region, a.height ? `${a.height}cm` : '', a.job].filter(Boolean).map(esc).join(' · ');
+  return `<div class="app-card">
+    <div class="app-head">
+      <span class="badge ${a.side} num">${a.no}</span>
+      <div class="app-main">
+        <b>${esc(a.label)} <small>${esc(String(a.year).slice(-2))}년생</small></b>
+        <span class="handle">@${esc(a.handle || '아이디없음')}</span>
+      </div>
+      <span class="app-pin">PIN <b>${esc(pin)}</b></span>
+    </div>
+    <div class="app-quick">${quick || '&nbsp;'}</div>
+    <div class="app-btns">
+      <button class="mini-btn" data-act="copy-s2-one" data-id="${esc(a.id)}">한 줄 복사</button>
+      <button class="mini-btn" data-act="copy-s2-handle" data-id="${esc(a.id)}">@아이디</button>
+      <button class="mini-btn danger" data-act="del-s2" data-id="${esc(a.id)}">삭제</button>
+    </div>
+    <details class="app-detail">
+      <summary>상세 보기</summary>
+      <div class="app-grid">
+        ${appRow('결혼', a.marital)}
+        ${appRow('흡연', a.smoke)}
+        ${appRow('음주', a.drink)}
+        ${appRow('종교', a.religion)}
+        ${appRow('취미', a.hobby)}
+        ${appRow('MBTI', a.mbti)}
+        ${appRow('선호 나이차', a.ageGap)}
+        ${appRow('장거리', a.longDistance)}
+        ${appRow('좋아하는 구단', a.team)}
+        ${appRow('직업', a.job)}
+        ${appRow('키', a.height ? `${a.height}cm` : '')}
+        ${appRow('접수', a.at ? fmtDateTime(a.at) : '')}
+      </div>
+      ${a.important ? `<div class="app-important"><span>중요하게 생각하는 점</span><p>${esc(a.important)}</p></div>` : ''}
+    </details>
+  </div>`;
+}
+
+function appRow(label, value) {
+  if (!value) return '';
+  return `<div class="app-cell"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
+}
+
+function findApp(id) {
+  const apps = S.data.applications || {};
+  for (const side of ['m', 'w']) {
+    const found = numberedApplications(apps, side).find((a) => a.id === id);
+    if (found) return found;
+  }
+  return null;
 }
 
 function handleTemplate() {
@@ -1595,6 +1714,73 @@ function handleAction(act, el, e) {
     case 'save-handles':
       saveHandlesFromInput();
       break;
+
+    /* 2기 신청서 */
+    case 'roster-source':
+      S.rosterSource = el.dataset.source === 's2' ? 's2' : 's1';
+      S.scrollTo = 0;
+      render();
+      break;
+    case 'copy-apply-link':
+      copyText(APPLY_URL, '2기 신청 링크 복사 완료');
+      break;
+    case 'copy-s2-profiles': {
+      const side = el.dataset.side === 'w' ? 'w' : 'm';
+      const apps = S.data.applications || {};
+      const text = profileText(apps, side);
+      if (!text) {
+        toast(`${side === 'm' ? '남자' : '여자'} 신청서가 아직 없어요`);
+        break;
+      }
+      copyText(text, `${side === 'm' ? '남자' : '여자'} 한 줄 프로필 전체 복사 완료`);
+      break;
+    }
+    case 'copy-s2-handles': {
+      const apps = S.data.applications || {};
+      const text = handleText(apps);
+      if (!text) {
+        toast('신청서가 아직 없어요');
+        break;
+      }
+      copyText(text, '스레드 아이디 목록 복사 완료');
+      break;
+    }
+    case 'copy-s2-one': {
+      const app = findApp(el.dataset.id);
+      if (!app) {
+        toast('신청서를 찾지 못했어요');
+        break;
+      }
+      copyText(oneLineProfile(app), `${app.label} 한 줄 프로필 복사 완료`);
+      break;
+    }
+    case 'copy-s2-handle': {
+      const app = findApp(el.dataset.id);
+      if (!app || !app.handle) {
+        toast('아이디가 없는 신청서예요');
+        break;
+      }
+      copyText(`@${app.handle}`, `@${app.handle} 복사 완료`);
+      break;
+    }
+    case 'del-s2': {
+      const app = findApp(el.dataset.id);
+      if (!app) {
+        toast('신청서를 찾지 못했어요');
+        break;
+      }
+      openModal({
+        title: `${app.label} 신청서를 지울까요?`,
+        body: `@${esc(app.handle)} · ${esc(String(app.year).slice(-2))}년생 ${esc(app.region)}<br>지우면 되돌릴 수 없어요.`,
+        okText: '삭제',
+        danger: true,
+        onOk: async () => {
+          await S.store.remove(`${APPLY_PATH}/${app.id}`);
+          toast(`${app.label} 신청서를 지웠어요`);
+        },
+      });
+      break;
+    }
 
     /* 라운지 답장(대댓글) */
     case 'reply': {
