@@ -273,7 +273,7 @@ export function demoTemplate() {
       },
       s5: {
         pid: 'host',
-        text: '📢 1부 · 자기소개 & 단체톡 이 시작되었습니다',
+        text: '📢 1부 · 자기소개 & 단체톡이 시작되었습니다',
         at: now - 1000 * 60 * 2,
         type: 'system',
       },
