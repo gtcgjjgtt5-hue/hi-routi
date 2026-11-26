@@ -371,6 +371,7 @@ function isBottomView() {
 }
 
 function scheduleRender() {
+  if (window.__lsDebug) window.__lsWhy = new Error().stack;
   if (S.renderQueued) return;
   S.renderQueued = true;
   requestAnimationFrame(() => {
