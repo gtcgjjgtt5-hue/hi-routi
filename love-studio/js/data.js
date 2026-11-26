@@ -8,6 +8,8 @@
 export const APP_TITLE = '사랑의 스튜디오';
 export const HOST_PIN = '1990'; // 사회자 입장 비밀번호 (README에 바꾸는 법 있음)
 export const MAX_MSG = 300;
+export const LOUNGE_MAX = 2000; // 라운지 입력 — 긴 프로필 목록도 붙여넣을 수 있게
+export const ANN_MAX = 3000; // 전체 공지(방송) — 25명 프로필 목록이 통째로 들어가도록
 
 export const ROUNDS = [
   {

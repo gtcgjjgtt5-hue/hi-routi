@@ -9,6 +9,8 @@ import {
   WOMEN,
   ROUNDS,
   MAX_MSG,
+  LOUNGE_MAX,
+  ANN_MAX,
   byId,
   labelOf,
   nameOf,
@@ -22,7 +24,7 @@ import {
   parseInviteCode,
   checkPin,
   pageBaseUrl,
-} from './data.js?v=3';
+} from './data.js?v=4';
 import { createStore, demoTemplate } from './store.js?v=3';
 import {
   computeMatches,
@@ -421,6 +423,7 @@ function render() {
 
   screen.innerHTML = S.chat ? chatScreen() : mainScreen();
   bindChart();
+  growChatInput(document.getElementById('loungeInput'));
 
   const nextScroll = $('#scroll');
   if (nextScroll) {
@@ -566,11 +569,19 @@ function mainScreen() {
   `;
 }
 
+function tickerLine(text) {
+  const first = String(text || '')
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .find((l) => l.length) || '';
+  return first.length > 70 ? `${first.slice(0, 70)}…` : first;
+}
+
 function tickerHTML() {
   const anns = sortedAnnouncements();
   if (!anns.length) return '';
   return `<div class="ticker"><span class="ticker-badge">📢</span><span class="ticker-track"><span class="ticker-text">${esc(
-    anns[0].text
+    tickerLine(anns[0].text)
   )}</span></span></div>`;
 }
 
@@ -688,7 +699,10 @@ function loungeView() {
   <section class="msgs">
     ${msgs.length ? msgs.map((m) => msgBubble(m)).join('') : emptyState('아직 인사가 없어요', isHost ? '참가자들이 인사를 남기면 여기에 바로 보여요' : '첫 번째 인사를 남겨 보세요 🙋')}
   </section>
-  ${composer('lounge', isHost ? '사회자로 라운지에 말 걸기' : '익명으로 인사해 보세요', 'loungeInput')}
+  ${composer('lounge', isHost ? '사회자로 라운지에 말 걸기' : '익명으로 인사해 보세요', 'loungeInput', {
+    maxLen: LOUNGE_MAX,
+    multiline: true,
+  })}
   `;
 }
 
@@ -722,12 +736,27 @@ function msgBubble(m) {
   </div>`;
 }
 
-function composer(kind, placeholder, inputId) {
+function composer(kind, placeholder, inputId, opts = {}) {
+  const maxLen = opts.maxLen || MAX_MSG;
+  const field = opts.multiline
+    ? `<textarea id="${inputId}" name="text" class="chat-input chat-input-multi" rows="1" maxlength="${maxLen}"
+      placeholder="${esc(placeholder)}" autocomplete="off">${esc(S.drafts[kind] || '')}</textarea>`
+    : `<input id="${inputId}" name="text" class="chat-input" type="text" maxlength="${maxLen}"
+      placeholder="${esc(placeholder)}" autocomplete="off" value="${esc(S.drafts[kind] || '')}">`;
   return `<form class="composer" data-form="${kind}">
-    <input id="${inputId}" name="text" class="chat-input" type="text" maxlength="${MAX_MSG}"
-      placeholder="${esc(placeholder)}" autocomplete="off" value="${esc(S.drafts[kind] || '')}">
+    ${field}
     <button class="send" type="submit" aria-label="보내기">↑</button>
   </form>`;
+}
+
+/** 입력한 만큼 늘어나는 라운지 입력창(최대 5줄 안팎) */
+function growChatInput(el) {
+  if (!el || el.tagName !== 'TEXTAREA') return;
+  el.style.height = 'auto';
+  const max = 132;
+  const h = Math.min(el.scrollHeight, max);
+  el.style.height = `${h}px`;
+  el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden';
 }
 
 function emptyState(title, sub) {
@@ -1166,7 +1195,7 @@ function annView() {
   return `<section class="pad">
     <div class="section-head"><h2>방송하기</h2></div>
     <form class="ann-form" data-form="ann">
-      <textarea id="annInput" name="text" class="text-area" rows="3" maxlength="200" placeholder="전체 공지를 입력하세요">${esc(S.drafts.ann || '')}</textarea>
+      <textarea id="annInput" name="text" class="text-area" rows="6" maxlength="${ANN_MAX}" placeholder="전체 공지를 입력하세요 (여러 줄 그대로 보여요)">${esc(S.drafts.ann || '')}</textarea>
       <button class="btn primary block" type="submit">📢 전체에게 보내기</button>
     </form>
     <div class="quick-row">
@@ -1280,9 +1309,24 @@ function wireEvents() {
 
   document.addEventListener('input', (e) => {
     const el = e.target;
-    if (el.id === 'loungeInput') S.drafts.lounge = el.value;
-    else if (el.id === 'chatInput') S.drafts.chat = el.value;
+    if (el.id === 'loungeInput') {
+      S.drafts.lounge = el.value;
+      growChatInput(el);
+    } else if (el.id === 'chatInput') S.drafts.chat = el.value;
     else if (el.id === 'annInput') S.drafts.ann = el.value;
+  });
+
+  document.addEventListener('keydown', (e) => {
+    // 라운지 입력창은 여러 줄이지만 Enter로 바로 보내고, 줄바꿈은 Shift+Enter
+    const el = e.target;
+    if (e.key === 'Enter' && !e.shiftKey && el && el.id === 'loungeInput' && el.tagName === 'TEXTAREA') {
+      const form = el.closest('form');
+      if (form) {
+        e.preventDefault();
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }
   });
 
   document.addEventListener(
@@ -1536,7 +1580,10 @@ async function handleSubmit(kind, form) {
   if (!text) return;
 
   if (kind === 'lounge') {
-    if (text.length > MAX_MSG) return;
+    if (text.length > LOUNGE_MAX) {
+      toast(`라운지 글은 ${LOUNGE_MAX}자까지 보낼 수 있어요`);
+      return;
+    }
     S.drafts.lounge = '';
     await sendLounge({ pid: S.me.role === 'host' ? 'host' : S.me.pid, text, at: Date.now() });
     return;

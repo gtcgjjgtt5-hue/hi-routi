@@ -937,6 +937,9 @@ p {
   line-height: 1.55;
   color: var(--ink);
   padding-right: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .ann-time {
   display: block;
@@ -984,6 +987,7 @@ p {
   font-size: 14px;
   line-height: 1.5;
   word-break: break-word;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
   box-shadow: 0 1px 0 rgba(58, 46, 42, 0.05);
 }
@@ -1029,6 +1033,7 @@ p {
   position: sticky;
   bottom: 0;
   display: flex;
+  align-items: flex-end;
   gap: 8px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(255, 247, 234, 0.2), var(--cream) 40%);
@@ -1047,6 +1052,14 @@ p {
 .chat-input:focus {
   border-color: var(--pink);
   box-shadow: 0 0 0 3px rgba(242, 114, 159, 0.12);
+}
+/* 라운지 입력창은 여러 줄(붙여넣은 프로필 목록도 줄바꿈 그대로) */
+.chat-input-multi {
+  resize: none;
+  border-radius: 22px;
+  line-height: 1.45;
+  max-height: 132px;
+  overflow-y: auto;
 }
 .send {
   flex: 0 0 auto;
