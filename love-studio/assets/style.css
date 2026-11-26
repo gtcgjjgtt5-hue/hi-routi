@@ -855,12 +855,14 @@ p {
   box-shadow: 0 -6px 18px -14px rgba(58, 46, 42, 0.5);
 }
 .tab {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
-  padding: 6px 2px 4px;
+  padding: 6px 0 4px;
   border-radius: 12px;
   color: var(--muted);
   transition: color 0.15s ease, background 0.15s ease;
@@ -874,6 +876,26 @@ p {
 .tab-label {
   font-size: 10.5px;
   font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+/* 사회자도 5개 탭(진행·라운지·명단·투표·방송)이 아이폰 폭에서 한 줄에 들어가게 */
+@media (max-width: 400px) {
+  .tabs {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+  .tab {
+    padding: 5px 0 3px;
+    gap: 1px;
+  }
+  .tab-icon {
+    font-size: 16px;
+  }
+  .tab-label {
+    font-size: 9.5px;
+    letter-spacing: -0.2px;
+  }
 }
 .tab.on {
   color: var(--pink-deep);

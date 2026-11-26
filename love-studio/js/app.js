@@ -382,6 +382,7 @@ function openRoomChat(roomId) {
 function isBottomView() {
   if (!S.me) return false;
   if (S.chat) return true;
+  if (S.me.role === 'host') return S.hostTab === 'lounge';
   return S.me.role === 'participant' && S.tab === 'lounge';
 }
 
@@ -578,6 +579,7 @@ function tabbar() {
   const items = isHost
     ? [
         ['control', '🎬', '진행'],
+        ['lounge', '💬', '라운지'],
         ['roster', '🧑‍🤝‍🧑', '명단'],
         ['vote', '💘', '투표'],
         ['ann', '📢', '방송'],
@@ -667,6 +669,7 @@ function participantView() {
 }
 
 function loungeView() {
+  const isHost = S.me.role === 'host';
   const msgs = sortedLounge();
   const anns = sortedAnnouncements();
   return `
@@ -675,13 +678,17 @@ function loungeView() {
       <h2>전체 익명 라운지</h2>
       <span class="muted">${onlineCount()}/${ROSTER.length} 접속</span>
     </div>
-    <p class="section-note">🔒 실명·스레드 아이디는 아무에게도 보이지 않아요. 사회자만 확인합니다.</p>
+    <p class="section-note">${
+      isHost
+        ? '🎤 사회자로 보고 있어요 · 참가자들의 대화가 실시간으로 보입니다. 여기서 보낸 말은 <b>🎤 사회자</b>로 표시돼요.'
+        : '🔒 실명·스레드 아이디는 아무에게도 보이지 않아요. 사회자만 확인합니다.'
+    }</p>
     ${anns.length ? annStack(anns) : ''}
   </section>
   <section class="msgs">
-    ${msgs.length ? msgs.map((m) => msgBubble(m)).join('') : emptyState('아직 인사가 없어요', '첫 번째 인사를 남겨 보세요 🙋')}
+    ${msgs.length ? msgs.map((m) => msgBubble(m)).join('') : emptyState('아직 인사가 없어요', isHost ? '참가자들이 인사를 남기면 여기에 바로 보여요' : '첫 번째 인사를 남겨 보세요 🙋')}
   </section>
-  ${composer('lounge', '익명으로 인사해 보세요', 'loungeInput')}
+  ${composer('lounge', isHost ? '사회자로 라운지에 말 걸기' : '익명으로 인사해 보세요', 'loungeInput')}
   `;
 }
 
@@ -962,6 +969,7 @@ function myView() {
 /* ---------------- 사회자 화면 ---------------- */
 
 function hostView() {
+  if (S.hostTab === 'lounge') return loungeView();
   if (S.hostTab === 'roster') return rosterView();
   if (S.hostTab === 'vote') return hostVoteView();
   if (S.hostTab === 'ann') return annView();
@@ -1351,8 +1359,8 @@ function handleAction(act, el, e) {
     case 'host-tab':
       S.hostTab = el.dataset.tab;
       S.chat = null;
-      S.nearBottom = false;
-      S.scrollTo = 0;
+      S.nearBottom = el.dataset.tab === 'lounge';
+      S.scrollTo = el.dataset.tab === 'lounge' ? 'bottom' : 0;
       render();
       break;
     case 'close-chat':
