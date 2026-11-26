@@ -384,6 +384,8 @@ function scheduleRender() {
 }
 
 function render() {
+  window.__lsData = S.data;
+  window.__lsMe = S.me;
   const screen = $('#screen');
   if (!screen) return;
   if (!S.ready) {
