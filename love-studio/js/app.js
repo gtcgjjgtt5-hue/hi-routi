@@ -263,7 +263,10 @@ function stopPresence() {
 function sub(path, apply, opts = {}) {
   const un = S.store.subscribe(path, (value) => {
     apply(value);
-    if (!opts.silent) scheduleRender();
+    if (!opts.silent) {
+      if (window.__lsDebug) window.__lsWhy = `${path} :: ${new Error().stack}`;
+      scheduleRender();
+    }
   });
   S.subs.push(un);
 }
