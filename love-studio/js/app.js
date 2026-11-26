@@ -728,6 +728,7 @@ function voteView() {
       <span class="save-state">${S.data.myVote && S.data.myVote.at ? `저장됨 ${fmtTime(S.data.myVote.at)}` : '아직 저장 전'}</span>
     </div>
 
+    <p class="section-note"><b>${mySide === 'm' ? '여자' : '남자'} ${list.length}명</b> 중에서 고르세요. 번호를 한 번 더 누르면 취소돼요.</p>
     ${pickSection('first', '1지망', '꼭 한 명을 골라 주세요', list, v.first)}
     ${pickSection('second', '2지망', '있으면 골라 주세요 (선택)', list, v.second)}
     ${r.final ? pickSection('final', '최종 선택', '3부 최종 선택 · 1지망보다 우선해요', list, v.final) : ''}
@@ -778,10 +779,14 @@ async function saveVote(kind, target) {
     }
     next[kind] = null;
   } else {
+    if (kind === 'second' && target === next.first) {
+      toast('1지만과 같은 사람이어요');
+      return;
+    }
     next[kind] = target;
-    ['first', 'second', 'final'].forEach((k) => {
-      if (k !== kind && next[k] === target) next[k] = null;
-    });
+    // 같은 사람이 여러 칸에 중복되지 않도록 (1지망과 최종은 같이 둘 수 있어요)
+    if (next.second === next.first) next.second = null;
+    if (next.final === next.second) next.second = null;
   }
 
   if (!next.first) {
@@ -1532,7 +1537,7 @@ async function setRound(id) {
   await S.store.push('lounge', {
     pid: 'host',
     type: 'system',
-    text: `📢 ${target.label} ${target.id === 'waiting' ? '상태로 돌아갔습니다' : '이 시작되었습니다'}`,
+    text: `📢 ${target.label}${target.id === 'waiting' ? ' 상태로 돌아갔습니다' : '이 시작되었습니다'}`,
     at: Date.now(),
   });
   toast(target.label);
@@ -1682,7 +1687,10 @@ function toast(message) {
   el.textContent = message;
   el.classList.add('show');
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  toastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    el.textContent = '';
+  }, 2200);
 }
 
 async function copyText(text, message) {
