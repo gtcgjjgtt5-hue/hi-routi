@@ -14,11 +14,12 @@
 
 | 주소 | 설명 |
 | --- | --- |
-| https://gtcgjjgtt5-hue.github.io/love-studio/ | 최종 주소 (저장소 `love-studio` 생성 후) |
-| https://gtcgjjgtt5-hue.github.io/hi-routi/love-studio/ | 임시 주소 (같은 코드, 현재 동작) |
+| https://gtcgjjgtt5-hue.github.io/hi-routi/love-studio/ | **지금 쓰는 주소 (LIVE 동작 중)** |
+| https://gtcgjjgtt5-hue.github.io/love-studio/ | 최종 주소 (저장소 `love-studio` 생성 후 옮길 예정) |
 
-- 지금은 **체험 모드**입니다. 파이어베이스 설정을 넣기 전까지는 이 기기(브라우저) 안에서만 저장되고,
-  탭을 여러 개 열면 탭끼리 대화가 주고받아집니다. 혼자서 사회자/참가자를 오가며 전 화면을 미리 볼 수 있어요.
+- 지금은 **LIVE 모드**입니다 (2026-11-26 Firebase Realtime Database 연결 완료, 프로젝트 `love-studio-6bin-4b51b`).
+  각자 폰으로 접속하면 실시간으로 대화·투표가 오갑니다.
+- `js/config.js`에서 `databaseURL`을 지우면 예전처럼 **체험 모드**(이 기기 안에서만, 탭끼리만)로 돌아갑니다.
 - **사회자 입장**: 첫 화면에서 `🎤 사회자로 입장` → 비밀번호 **1990**
   (주소로 바로 들어가려면 `?host=1`)
 - **참가자 입장**: `💌 참가자로 입장` → 남자/여자 → 번호 → 개인 PIN 4자리
@@ -79,7 +80,12 @@ PIN은 `js/data.js`에 있습니다.)
 
 ---
 
-## 4. 진짜 실시간으로 쓰려면 (Firebase 연결, 5분)
+## 4. Firebase 연결 상태 (2026-11-26 연결 완료)
+
+**연결됨**: 프로젝트 `love-studio-6bin-4b51b`, RTDB 리전 `asia-southeast1`, 규칙은 아래 `.read/.write: true`(테스트 모드)로 열려 있습니다.
+확인한 것: LIVE 배지 · 사회자 PIN 입장 · 참가자 초대링크 입장 · 라운지/공지/1:1/투표 읽기·쓰기 실시간 반영.
+
+> 다른 프로젝트로 옮기거나 체험 모드로 되돌릴 때만 아래 순서가 필요합니다.
 
 체험 모드는 **한 기기 안에서만** 동작합니다. 20명이 각자 폰으로 접속하려면 Firebase Realtime Database를 연결하세요. (무료 Spark 요금제로 충분합니다)
 
