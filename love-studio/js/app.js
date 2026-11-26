@@ -176,10 +176,25 @@ function validMe(me) {
 
 function loadMe() {
   try {
-    return JSON.parse(localStorage.getItem('ls.me') || 'null');
+    const raw = sessionStorage.getItem('ls.me') || localStorage.getItem('ls.me');
+    return raw ? JSON.parse(raw) : null;
   } catch (_) {
     return null;
   }
+}
+
+function saveMe(me) {
+  try {
+    sessionStorage.setItem('ls.me', JSON.stringify(me));
+    localStorage.setItem('ls.me', JSON.stringify(me));
+  } catch (_) {}
+}
+
+function clearMe() {
+  try {
+    sessionStorage.removeItem('ls.me');
+    localStorage.removeItem('ls.me');
+  } catch (_) {}
 }
 
 function loadHandles() {
@@ -206,11 +221,9 @@ function login(me, opts = {}) {
     }
   } catch (_) {}
   S.scrollTo = 0;
-  try {
-    localStorage.setItem('ls.me', JSON.stringify(me));
-  } catch (_) {}
   S.tab = me.role === 'host' ? 'control' : 'lounge';
   S.hostTab = 'control';
+  saveMe(me);
   S.nearBottom = isBottomView();
   subscribeFor(me);
   if (me.role === 'participant') startPresence(me.pid);
@@ -224,9 +237,7 @@ function logout() {
   S.me = null;
   S.chat = null;
   S.entry = { step: 'start', side: 'm', num: null, pin: '', code: '', hostPin: '', error: '' };
-  try {
-    localStorage.removeItem('ls.me');
-  } catch (_) {}
+  clearMe();
   closeModal();
   render();
 }
@@ -1557,7 +1568,6 @@ async function sendAnnouncement(text) {
   const clean = String(text || '').trim();
   if (!clean) return;
   await S.store.push('announcements', { text: clean, at: Date.now() });
-  await S.store.push('lounge', { pid: 'host', type: 'system', text: `📢 ${clean}`, at: Date.now() });
   toast('전체에게 방송했어요 📢');
 }
 
