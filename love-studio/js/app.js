@@ -204,13 +204,13 @@ function login(me, opts = {}) {
       history.replaceState(null, '', location.pathname + location.hash.replace('#host', ''));
     }
   } catch (_) {}
-  S.nearBottom = true;
   S.scrollTo = 0;
   try {
     localStorage.setItem('ls.me', JSON.stringify(me));
   } catch (_) {}
   S.tab = me.role === 'host' ? 'control' : 'lounge';
   S.hostTab = 'control';
+  S.nearBottom = isBottomView();
   subscribeFor(me);
   if (me.role === 'participant') startPresence(me.pid);
   else startPresence('host');
@@ -348,6 +348,12 @@ function openRoomChat(roomId) {
 
 /* ---------------- 렌더 ---------------- */
 
+function isBottomView() {
+  if (!S.me) return false;
+  if (S.chat) return true;
+  return S.me.role === 'participant' && S.tab === 'lounge';
+}
+
 function scheduleRender() {
   if (S.renderQueued) return;
   S.renderQueued = true;
@@ -379,7 +385,7 @@ function render() {
   }
   const oldScroll = $('#scroll');
   const oldTop = oldScroll ? oldScroll.scrollTop : 0;
-  const stick = S.scrollTo === 'bottom' || (S.scrollTo == null && S.nearBottom);
+  const stick = S.scrollTo === 'bottom' || (S.scrollTo == null && S.nearBottom && isBottomView());
 
   screen.innerHTML = S.chat ? chatScreen() : mainScreen();
   bindChart();
@@ -484,7 +490,7 @@ function entryScreen() {
         <button class="key" data-act="pin-key" data-key="0">0</button>
         <button class="key fn" data-act="pin-key" data-key="ok">✓</button>
       </div>
-      <p class="entry-foot"><span>비밀번호를 잊었다면 사회자에게 알려 주세요</span></p>
+      <p class="entry-foot"><span>${isHost ? '비밀번호는 README에서 바꿀 수 있어요' : '비밀번호를 잊었다면 사회자에게 알려 주세요'}</span></p>
     </div>`;
   }
 
@@ -1287,14 +1293,14 @@ function handleAction(act, el, e) {
     case 'tab':
       S.tab = el.dataset.tab;
       S.chat = null;
-      S.nearBottom = true;
+      S.nearBottom = S.tab === 'lounge';
       S.scrollTo = 0;
       render();
       break;
     case 'host-tab':
       S.hostTab = el.dataset.tab;
       S.chat = null;
-      S.nearBottom = true;
+      S.nearBottom = false;
       S.scrollTo = 0;
       render();
       break;
