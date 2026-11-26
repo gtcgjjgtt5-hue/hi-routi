@@ -1033,11 +1033,139 @@ p {
   position: sticky;
   bottom: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   gap: 8px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(255, 247, 234, 0.2), var(--cream) 40%);
   border-top: 1.5px solid var(--line);
+}
+/* 사회자 라운지 — 보내기 전 사진 미리보기 */
+.composer-preview {
+  order: -1;
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 6px;
+  background: var(--paper);
+  border: 1.5px solid #f3e0b6;
+  border-radius: 14px;
+}
+.composer-preview img {
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.preview-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.preview-meta b {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.preview-meta span {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.preview-x {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f3ece3;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo-btn {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo-btn:active {
+  background: #ffeec2;
+  border-color: #f0d79b;
+}
+.photo-input {
+  display: none;
+}
+
+/* 라운지 말풍선 안의 사진 */
+.msg.has-photo {
+  width: 80%;
+  max-width: 80%;
+}
+.msg-body.msg-photo {
+  padding: 4px;
+  background: #fff;
+  border-color: var(--line);
+  line-height: 0;
+  max-width: 100%;
+}
+.msg-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #fff;
+  cursor: zoom-in;
+}
+
+/* 사진 크게 보기 */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(24, 18, 16, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  animation: fadein 0.16s ease-out;
+}
+.lightbox img {
+  max-width: 100%;
+  max-height: 88vh;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #fff;
+}
+.lightbox-hint {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.7);
+}
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .chat-input {
   flex: 1;

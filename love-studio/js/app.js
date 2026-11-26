@@ -88,6 +88,7 @@ const S = {
   chat: null,
   entry: { step: 'start', side: 'm', num: null, pin: '', code: '', hostPin: '', error: '' },
   drafts: { lounge: '', chat: '', ann: '' },
+  pendingImg: null, // 사회자가 라운지에 붙일 사진(압축된 Data URL) — 전송 전 미리보기용
   handles: {},
   editingHandles: false,
   scrollTo: null,
@@ -218,6 +219,7 @@ function saveHandles() {
 function login(me, opts = {}) {
   S.me = me;
   S.chat = null;
+  S.pendingImg = null;
   // 초대 링크/파라미터로 들어온 흔적은 주소창에서 지워요(새로고침 때 재입장 방지)
   try {
     if (/[?&](code|c|host)=/.test(location.search)) {
@@ -240,6 +242,8 @@ function logout() {
   unsubAll();
   S.me = null;
   S.chat = null;
+  S.pendingImg = null;
+  closePhoto();
   S.entry = { step: 'start', side: 'm', num: null, pin: '', code: '', hostPin: '', error: '' };
   clearMe();
   closeModal();
@@ -702,6 +706,7 @@ function loungeView() {
   ${composer('lounge', isHost ? '사회자로 라운지에 말 걸기' : '익명으로 인사해 보세요', 'loungeInput', {
     maxLen: LOUNGE_MAX,
     multiline: true,
+    photo: isHost,
   })}
   `;
 }
@@ -727,23 +732,45 @@ function msgBubble(m) {
   }
   const mine = S.me.role === 'host' ? m.pid === 'host' : m.pid === S.me.pid;
   const isHost = m.pid === 'host';
-  return `<div class="msg ${mine ? 'mine' : ''} ${isHost ? 'from-host' : ''}">
+  // 사진은 사회자만 붙일 수 있어요 — 사회자 메시지의 img 만 그림으로 그립니다
+  const img = isHost ? safeImg(m.img) : '';
+  return `<div class="msg ${mine ? 'mine' : ''} ${isHost ? 'from-host' : ''}${img ? ' has-photo' : ''}">
     <div class="msg-head">${
       isHost ? '<span class="badge host sm">🎤 사회자</span>' : `<span class="badge ${sideOf(m.pid)} sm">${esc(labelOf(m.pid))}</span>`
     }</div>
-    <div class="msg-body">${esc(m.text)}</div>
+    ${m.text ? `<div class="msg-body">${esc(m.text)}</div>` : ''}
+    ${img ? `<div class="msg-body msg-photo"><img class="msg-img" src="${img}" alt="사회자가 보낸 사진" data-act="view-photo" loading="lazy"></div>` : ''}
     <div class="msg-time">${fmtTime(m.at)}</div>
   </div>`;
 }
 
+/** data:image/... 만 그림으로 그립니다(외부 주소·스크립트 차단) */
+function safeImg(src) {
+  return typeof src === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(src) ? src : '';
+}
+
 function composer(kind, placeholder, inputId, opts = {}) {
   const maxLen = opts.maxLen || MAX_MSG;
+  const pending = opts.photo ? safeImg(S.pendingImg) : '';
+  const preview = pending
+    ? `<div class="composer-preview">
+        <img src="${pending}" alt="첨부한 사진 미리보기">
+        <div class="preview-meta"><b>사진 1장</b><span>보내기를 누르면 함께 올라가요</span></div>
+        <button class="preview-x" type="button" data-act="cancel-photo" aria-label="사진 첨부 취소">✕</button>
+      </div>`
+    : '';
+  const photoBtn = opts.photo
+    ? `<button class="photo-btn" type="button" data-act="pick-photo" aria-label="사진 첨부">📷</button>
+    <input id="loungePhoto" class="photo-input" type="file" accept="image/*" tabindex="-1" aria-hidden="true">`
+    : '';
   const field = opts.multiline
     ? `<textarea id="${inputId}" name="text" class="chat-input chat-input-multi" rows="1" maxlength="${maxLen}"
       placeholder="${esc(placeholder)}" autocomplete="off">${esc(S.drafts[kind] || '')}</textarea>`
     : `<input id="${inputId}" name="text" class="chat-input" type="text" maxlength="${maxLen}"
       placeholder="${esc(placeholder)}" autocomplete="off" value="${esc(S.drafts[kind] || '')}">`;
   return `<form class="composer" data-form="${kind}">
+    ${preview}
+    ${photoBtn}
     ${field}
     <button class="send" type="submit" aria-label="보내기">↑</button>
   </form>`;
@@ -1307,6 +1334,28 @@ function wireEvents() {
     handleSubmit(form.dataset.form, form);
   });
 
+  // 사진은 늦게 디코딩돼서 높이가 나중에 커지므로, 바닥을 보고 있으면 다시 맨 아래로
+  document.addEventListener(
+    'load',
+    (e) => {
+      const el = e.target;
+      if (el && el.classList && el.classList.contains('msg-img') && S.nearBottom && isBottomView()) {
+        const sc = document.getElementById('scroll');
+        if (sc) sc.scrollTop = sc.scrollHeight;
+      }
+    },
+    true
+  );
+
+  document.addEventListener('change', (e) => {
+    const el = e.target;
+    if (el && el.id === 'loungePhoto') {
+      const file = el.files && el.files[0];
+      el.value = ''; // 같은 사진을 다시 고를 수 있게 비워 둡니다
+      pickPhoto(file);
+    }
+  });
+
   document.addEventListener('input', (e) => {
     const el = e.target;
     if (el.id === 'loungeInput') {
@@ -1342,7 +1391,9 @@ function wireEvents() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      if (S.chat) {
+      if (document.querySelector('.lightbox')) {
+        closePhoto();
+      } else if (S.chat) {
         closeChat();
       }
     }
@@ -1396,6 +1447,7 @@ function handleAction(act, el, e) {
     case 'tab':
       S.tab = el.dataset.tab;
       S.chat = null;
+      S.pendingImg = null;
       S.nearBottom = S.tab === 'lounge';
       S.scrollTo = 0;
       render();
@@ -1403,6 +1455,7 @@ function handleAction(act, el, e) {
     case 'host-tab':
       S.hostTab = el.dataset.tab;
       S.chat = null;
+      S.pendingImg = null;
       S.nearBottom = el.dataset.tab === 'lounge';
       S.scrollTo = el.dataset.tab === 'lounge' ? 'bottom' : 0;
       render();
@@ -1494,6 +1547,23 @@ function handleAction(act, el, e) {
       saveHandlesFromInput();
       break;
 
+    /* 라운지 사진 (사회자) */
+    case 'pick-photo': {
+      const input = document.getElementById('loungePhoto');
+      if (input) input.click();
+      break;
+    }
+    case 'cancel-photo':
+      S.pendingImg = null;
+      render();
+      toast('사진을 붙이지 않았어요');
+      break;
+    case 'view-photo': {
+      const img = el.tagName === 'IMG' ? el : el.querySelector('img');
+      if (img) openPhoto(img.getAttribute('src'));
+      break;
+    }
+
     /* 모달 */
     case 'modal-ok':
       resolveModal(true);
@@ -1575,17 +1645,27 @@ function closeChat() {
 /* ---------------- 보내기 ---------------- */
 
 async function handleSubmit(kind, form) {
-  const input = form.querySelector('input, textarea');
+  const input = form.querySelector('.chat-input') || form.querySelector('input, textarea');
   const text = (input ? input.value : '').trim();
-  if (!text) return;
+  // 라운지 사진은 사회자만 — 미리보기로 걸어둔 사진이 있으면 글 없이도 보낼 수 있어요
+  const attach = kind === 'lounge' && S.me && S.me.role === 'host' ? safeImg(S.pendingImg) : '';
+  if (!text && !attach) return;
 
   if (kind === 'lounge') {
     if (text.length > LOUNGE_MAX) {
       toast(`라운지 글은 ${LOUNGE_MAX}자까지 보낼 수 있어요`);
       return;
     }
+    const isHost = S.me.role === 'host';
+    const msg = { pid: isHost ? 'host' : S.me.pid, at: Date.now() };
+    if (text) msg.text = text;
+    if (attach) msg.img = attach;
     S.drafts.lounge = '';
-    await sendLounge({ pid: S.me.role === 'host' ? 'host' : S.me.pid, text, at: Date.now() });
+    S.pendingImg = null;
+    S.nearBottom = true;
+    S.scrollTo = 'bottom';
+    await sendLounge(msg);
+    render();
     return;
   }
 
@@ -1625,6 +1705,91 @@ async function handleSubmit(kind, form) {
 
 async function sendLounge(msg) {
   await S.store.push('lounge', msg);
+}
+
+/* ---------------- 사회자 라운지 사진 ----------------
+   고른 사진을 브라우저 canvas 로 긴 변 1000px · JPEG 0.78 로 줄여 Data URL 로 만듭니다.
+   (전광판에 띄운 사진의 글자가 읽히도록 900px 아래로는 거의 내리지 않습니다) */
+
+const PHOTO_EDGE = 1000;
+const PHOTO_STEPS = [
+  { edge: 1000, quality: 0.78 },
+  { edge: 1000, quality: 0.66 },
+  { edge: 900, quality: 0.6 },
+  { edge: 900, quality: 0.5 },
+];
+const PHOTO_MAX_CHARS = 900 * 1024; // Data URL 문자 수 기준(대략 660KB 이미지) — RTDB 한 칸에 무리 없게
+
+function loadPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('사진을 열지 못했어요'));
+    };
+    img.src = url;
+  });
+}
+
+async function compressPhoto(file) {
+  const img = await loadPhoto(file);
+  const sw = img.naturalWidth || img.width || 1;
+  const sh = img.naturalHeight || img.height || 1;
+  let out = '';
+  for (const step of PHOTO_STEPS) {
+    const scale = Math.min(1, step.edge / Math.max(sw, sh));
+    const w = Math.max(1, Math.round(sw * scale));
+    const h = Math.max(1, Math.round(sh * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; // 투명 PNG 도 글자가 잘 보이게 흰 바탕
+    ctx.fillRect(0, 0, w, h);
+    if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, w, h);
+    out = canvas.toDataURL('image/jpeg', step.quality);
+    if (out.length <= PHOTO_MAX_CHARS) return out;
+  }
+  return out;
+}
+
+async function pickPhoto(file) {
+  if (!file) return;
+  if (file.type && !/^image\//.test(file.type)) {
+    toast('사진 파일만 붙일 수 있어요');
+    return;
+  }
+  try {
+    S.pendingImg = await compressPhoto(file);
+    render();
+  } catch (err) {
+    console.error(err);
+    S.pendingImg = null;
+    toast('사진을 읽지 못했어요. 다른 사진으로 다시 해 주세요');
+    render();
+  }
+}
+
+function openPhoto(src) {
+  if (!safeImg(src)) return;
+  closePhoto();
+  const box = document.createElement('div');
+  box.className = 'lightbox';
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-label', '사진 크게 보기');
+  box.innerHTML = `<img src="${src}" alt="라운지 사진 원본"><span class="lightbox-hint">탭하면 닫혀요</span>`;
+  box.addEventListener('click', closePhoto);
+  document.body.appendChild(box);
+}
+
+function closePhoto() {
+  document.querySelectorAll('.lightbox').forEach((el) => el.remove());
 }
 
 async function sendAnnouncement(text) {
