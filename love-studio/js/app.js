@@ -264,7 +264,7 @@ function sub(path, apply, opts = {}) {
   const un = S.store.subscribe(path, (value) => {
     apply(value);
     if (!opts.silent) {
-      if (window.__lsDebug) window.__lsWhy = `${path} :: ${new Error().stack}`;
+      if (window.__lsDebug) window.__lsPath = path;
       scheduleRender();
     }
   });
@@ -374,7 +374,7 @@ function isBottomView() {
 }
 
 function scheduleRender() {
-  if (window.__lsDebug) window.__lsWhy = new Error().stack;
+  if (window.__lsDebug) window.__lsWhy = `${window.__lsPath || '?'} :: ${new Error().stack.split('\n').slice(2, 4).join(' | ')}`;
   if (S.renderQueued) return;
   S.renderQueued = true;
   requestAnimationFrame(() => {
