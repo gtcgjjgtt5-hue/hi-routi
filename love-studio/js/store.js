@@ -98,10 +98,21 @@ function localStore() {
     mode: 'demo',
     note: '',
     subscribe(path, fn) {
-      const entry = { path, fn };
+      const entry = { path, fn, last: undefined };
+      entry.fn = (value) => {
+        let sig;
+        try {
+          sig = JSON.stringify(value === undefined ? null : value);
+        } catch (_) {
+          sig = String(Math.random());
+        }
+        if (sig === entry.last) return;
+        entry.last = sig;
+        fn(value);
+      };
       listeners.push(entry);
       try {
-        fn(getPath(path));
+        entry.fn(getPath(path));
       } catch (err) {
         console.error(err);
       }

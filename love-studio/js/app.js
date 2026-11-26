@@ -92,6 +92,7 @@ const S = {
   presenceTimer: null,
   uiTimer: null,
   renderQueued: false,
+  presenceSig: '',
 };
 
 /* ---------------- 시작 ---------------- */
@@ -234,13 +235,20 @@ function startPresence(pid) {
   stopPresence();
   if (S.store.setupDisconnect) S.store.setupDisconnect(pid);
   S.store.markPresence(pid);
+  if (S.me && S.me.role === 'host') {
+    // 접속 표시가 시간이 지나며 바뀌는 것만 조용히 반영
+    S.uiTimer = setInterval(() => {
+      const sig = onlineSignature();
+      if (sig !== S.presenceSig) {
+        S.presenceSig = sig;
+        scheduleRender();
+      }
+    }, 20000);
+    return;
+  }
   S.presenceTimer = setInterval(() => {
     if (S.me) S.store.markPresence(pid);
   }, 25000);
-  if (S.uiTimer) clearInterval(S.uiTimer);
-  S.uiTimer = setInterval(() => {
-    if (S.me && S.me.role === 'host') scheduleRender();
-  }, 20000);
 }
 
 function stopPresence() {
@@ -252,10 +260,10 @@ function stopPresence() {
 
 /* ---------------- 구독 ---------------- */
 
-function sub(path, apply) {
+function sub(path, apply, opts = {}) {
   const un = S.store.subscribe(path, (value) => {
     apply(value);
-    scheduleRender();
+    if (!opts.silent) scheduleRender();
   });
   S.subs.push(un);
 }
@@ -291,9 +299,17 @@ function subscribeFor(me) {
   sub('lounge', (v) => {
     S.data.lounge = v || {};
   });
-  sub('presence', (v) => {
-    S.data.presence = v || {};
-  });
+  sub(
+    'presence',
+    (v) => {
+      S.data.presence = v || {};
+      const sig = onlineSignature();
+      if (sig === S.presenceSig) return;
+      S.presenceSig = sig;
+      scheduleRender();
+    },
+    { silent: true }
+  );
   sub('rooms', (v) => {
     S.data.rooms = v || {};
   });
@@ -595,6 +611,14 @@ function onlineCount() {
 function isOnline(pid) {
   const p = S.data.presence && S.data.presence[pid];
   return !!(p && Date.now() - (p.at || 0) < 90000);
+}
+
+function onlineSignature() {
+  return Object.entries(S.data.presence || {})
+    .filter(([pid, p]) => pid !== 'host' && byId(pid) && p && Date.now() - (p.at || 0) < 90000)
+    .map(([pid]) => pid)
+    .sort()
+    .join(',');
 }
 
 function threadList(pid) {
@@ -1547,6 +1571,10 @@ async function stepRound(dir) {
   const cur = roundById(S.data.status.round);
   const next = ROUNDS[Math.min(ROUNDS.length - 1, Math.max(0, cur.step + dir))];
   if (!next || next.id === cur.id) return;
+  if (next.id === 'reveal') {
+    confirmReveal();
+    return;
+  }
   await setRound(next.id);
 }
 
