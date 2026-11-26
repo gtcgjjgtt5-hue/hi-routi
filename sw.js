@@ -1,5 +1,5 @@
 /* 하이루티 HiRouti — 오프라인 껍데기 캐시 */
-const CACHE = 'hirouti-v3';
+const CACHE = 'hirouti-v4';
 const SHELL = [
   './',
   './index.html',
@@ -30,7 +30,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
-  if (new URL(req.url).origin !== location.origin) return;
+  const url = new URL(req.url);
+  if (url.origin !== location.origin) return;
+
+  // 사랑의 스튜디오(/love-studio/)는 이 캐시가 관여하지 않는다.
+  // (예전 버전 캐시가 새 배포 화면을 가로막던 문제 방지)
+  if (url.pathname.startsWith('/hi-routi/love-studio/')) return;
 
   event.respondWith(
     caches.match(req).then((hit) => {
