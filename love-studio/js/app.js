@@ -264,7 +264,6 @@ function sub(path, apply, opts = {}) {
   const un = S.store.subscribe(path, (value) => {
     apply(value);
     if (!opts.silent) {
-      if (window.__lsDebug) window.__lsPath = path;
       scheduleRender();
     }
   });
@@ -374,7 +373,6 @@ function isBottomView() {
 }
 
 function scheduleRender() {
-  if (window.__lsDebug) window.__lsWhy = `${window.__lsPath || '?'} :: ${new Error().stack.split('\n').slice(2, 4).join(' | ')}`;
   if (S.renderQueued) return;
   S.renderQueued = true;
   requestAnimationFrame(() => {
@@ -384,8 +382,6 @@ function scheduleRender() {
 }
 
 function render() {
-  window.__lsData = S.data;
-  window.__lsMe = S.me;
   const screen = $('#screen');
   if (!screen) return;
   if (!S.ready) {
@@ -1064,6 +1060,7 @@ function rosterView() {
           </div>
           <div class="roster-btns">
             <button class="mini-btn" data-act="copy-link" data-id="${p.id}">링크</button>
+            <button class="mini-btn" data-act="copy-pin" data-id="${p.id}">PIN</button>
             <button class="mini-btn ${lastDm && lastDm.from === p.id ? 'alert' : ''}" data-act="open-dm" data-id="${p.id}">1:1</button>
           </div>
         </div>`;
