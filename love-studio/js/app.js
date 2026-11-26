@@ -5,6 +5,8 @@
 import {
   HOST_PIN,
   ROSTER,
+  MEN,
+  WOMEN,
   ROUNDS,
   MAX_MSG,
   byId,
@@ -20,8 +22,8 @@ import {
   parseInviteCode,
   checkPin,
   pageBaseUrl,
-} from './data.js';
-import { createStore, demoTemplate } from './store.js';
+} from './data.js?v=3';
+import { createStore, demoTemplate } from './store.js?v=3';
 import {
   computeMatches,
   tallyVotes,
@@ -30,7 +32,7 @@ import {
   picksOf,
   chosenRank,
   pairKey,
-} from './matching.js';
+} from './matching.js?v=3';
 
 /* ---------------- 작은 도구들 ---------------- */
 
@@ -460,7 +462,7 @@ function entryScreen() {
       <div class="hero-photo"><img src="assets/hero.jpg" alt="사랑의 스튜디오 무대"></div>
       <p class="entry-kicker">1990년대 감성 소개팅 쇼</p>
       <h1 class="logo">사랑의<br><em>스튜디오</em></h1>
-      <p class="entry-sub">남자 10명 · 여자 10명<br>번호로만 만나는 익명 소개팅</p>
+      <p class="entry-sub">남자 ${MEN.length}명 · 여자 ${WOMEN.length}명<br>번호로만 만나는 익명 소개팅</p>
       <div class="entry-card ticket">
         <button class="btn primary block" data-act="entry-go-participant">💌 참가자로 입장</button>
         <button class="btn ghost block" data-act="entry-go-host">🎤 사회자로 입장</button>
@@ -1429,7 +1431,7 @@ function handleAction(act, el, e) {
     case 'copy-all-links':
       copyText(
         ROSTER.map((p) => `${nameOf(p.id)}\t${inviteUrl(p.id)}`).join('\n'),
-        '20명 링크 전체 복사 완료'
+        `${ROSTER.length}명 링크 전체 복사 완료`
       );
       break;
     case 'toggle-handles':

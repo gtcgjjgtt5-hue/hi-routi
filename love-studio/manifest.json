@@ -1,7 +1,7 @@
 {
   "name": "사랑의 스튜디오",
   "short_name": "사랑의 스튜디오",
-  "description": "남자 10명 · 여자 10명, 번호로만 만나는 90년대 감성 소개팅 쇼",
+  "description": "남자 13명 · 여자 12명, 번호로만 만나는 90년대 감성 소개팅 쇼",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#FFF7EA",

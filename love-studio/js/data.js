@@ -68,6 +68,10 @@ export const ROSTER = [
   { id: 'm8', side: 'm', num: 8, year: 1999, pin: '6720' },
   { id: 'm9', side: 'm', num: 9, year: 1999, pin: '1846' },
   { id: 'm10', side: 'm', num: 10, year: 2000, pin: '9573' },
+  // 남자 11~13호 (막차 추가 · 2026-11-26)
+  { id: 'm11', side: 'm', num: 11, year: 1981, pin: '3819' },
+  { id: 'm12', side: 'm', num: 12, year: 1981, pin: '2513' },
+  { id: 'm13', side: 'm', num: 13, year: 1992, pin: '7140' },
   // 여자 1~10호 (출생연도 순)
   { id: 'w1', side: 'w', num: 1, year: 1983, pin: '6072' },
   { id: 'w2', side: 'w', num: 2, year: 1987, pin: '2941' },
@@ -79,6 +83,9 @@ export const ROSTER = [
   { id: 'w8', side: 'w', num: 8, year: 1996, pin: '5273' },
   { id: 'w9', side: 'w', num: 9, year: 1998, pin: '1498' },
   { id: 'w10', side: 'w', num: 10, year: 1998, pin: '8026' },
+  // 여자 11~12호 (막차 추가 · 2026-11-26)
+  { id: 'w11', side: 'w', num: 11, year: 1985, pin: '3728' },
+  { id: 'w12', side: 'w', num: 12, year: 1992, pin: '7342' },
 ];
 
 export const MEN = ROSTER.filter((p) => p.side === 'm');

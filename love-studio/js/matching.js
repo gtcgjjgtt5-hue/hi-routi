@@ -2,7 +2,7 @@
    사랑의 스튜디오 — 사랑의 작대기 (투표 · 매칭 · 관계도)
    ============================================================ */
 
-import { MEN, WOMEN, byId, nameOf, shortYear } from './data.js';
+import { MEN, WOMEN, byId, nameOf, shortYear } from './data.js?v=3';
 
 /** 투표 원본을 안전한 형태로 */
 export function normalizeVote(raw) {
@@ -105,7 +105,9 @@ export function arrowChartSVG(opts = {}) {
   const votes = opts.votes || {};
   const meId = opts.meId || null;
   const showAll = opts.showAll !== false;
-  const height = TOP_PAD + ROW_H * 10 + BOTTOM_PAD;
+  // 명단 인원이 늘어나도(막차 추가 등) 줄 수에 맞춰 높이가 늘어나도록 계산
+  const rows = Math.max(MEN.length, WOMEN.length, 10);
+  const height = TOP_PAD + ROW_H * rows + BOTTOM_PAD;
   const { pairs } = computeMatches(votes);
   const pairMap = new Map(pairs.map((p) => [p.key, p]));
   const rowsY = (i) => TOP_PAD + i * ROW_H + ROW_H / 2;
