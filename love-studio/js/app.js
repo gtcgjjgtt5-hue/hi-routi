@@ -1217,7 +1217,13 @@ function chatScreen() {
     </header>
     <main class="scroll chat-scroll" id="scroll">
       <div class="chat-intro">
-        ${isHostThread ? '🎤 사회자와의 1:1 대화예요. 다른 참가자에게는 보이지 않아요.' : '💘 매칭된 두 사람만 볼 수 있는 비밀방이에요.'}
+        ${
+          isHostThread
+            ? S.me.role === 'host'
+              ? `${esc(title)}님과의 1:1 대화예요. 다른 참가자에게는 보이지 않아요.`
+              : '🎤 사회자와의 1:1 대화예요. 다른 참가자에게는 보이지 않아요.'
+            : '💘 매칭된 두 사람만 볼 수 있는 비밀방이에요.'
+        }
       </div>
       ${msgs.length ? msgs.map((m) => chatBubble(m, myId)).join('') : emptyState('아직 대화가 없어요', '먼저 인사를 건네 보세요')}
     </main>
