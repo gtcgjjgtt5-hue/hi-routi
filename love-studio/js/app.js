@@ -89,6 +89,7 @@ const S = {
   entry: { step: 'start', side: 'm', num: null, pin: '', code: '', hostPin: '', error: '' },
   drafts: { lounge: '', chat: '', ann: '' },
   pendingImg: null, // 사회자가 라운지에 붙일 사진(압축된 Data URL) — 전송 전 미리보기용
+  replyTo: null, // 답장 대상 메시지 { id, pid, sender, text } — 입력창 위 취소 바에 표시
   handles: {},
   editingHandles: false,
   scrollTo: null,
@@ -220,6 +221,7 @@ function login(me, opts = {}) {
   S.me = me;
   S.chat = null;
   S.pendingImg = null;
+  S.replyTo = null;
   // 초대 링크/파라미터로 들어온 흔적은 주소창에서 지워요(새로고침 때 재입장 방지)
   try {
     if (/[?&](code|c|host)=/.test(location.search)) {
@@ -243,6 +245,7 @@ function logout() {
   S.me = null;
   S.chat = null;
   S.pendingImg = null;
+  S.replyTo = null;
   closePhoto();
   S.entry = { step: 'start', side: 'm', num: null, pin: '', code: '', hostPin: '', error: '' };
   clearMe();
@@ -734,14 +737,40 @@ function msgBubble(m) {
   const isHost = m.pid === 'host';
   // 사진은 사회자만 붙일 수 있어요 — 사회자 메시지의 img 만 그림으로 그립니다
   const img = isHost ? safeImg(m.img) : '';
-  return `<div class="msg ${mine ? 'mine' : ''} ${isHost ? 'from-host' : ''}${img ? ' has-photo' : ''}">
+  const quote = m.replyTo ? replyQuote(m.replyTo) : '';
+  return `<div class="msg ${mine ? 'mine' : ''} ${isHost ? 'from-host' : ''}${img ? ' has-photo' : ''}" data-msg-id="${esc(m.id)}">
     <div class="msg-head">${
       isHost ? '<span class="badge host sm">🎤 사회자</span>' : `<span class="badge ${sideOf(m.pid)} sm">${esc(labelOf(m.pid))}</span>`
     }</div>
+    ${quote}
     ${m.text ? `<div class="msg-body">${esc(m.text)}</div>` : ''}
     ${img ? `<div class="msg-body msg-photo"><img class="msg-img" src="${img}" alt="사회자가 보낸 사진" data-act="view-photo" loading="lazy"></div>` : ''}
-    <div class="msg-time">${fmtTime(m.at)}</div>
+    <div class="msg-foot">
+      <button class="reply-btn" type="button" data-act="reply" data-id="${esc(m.id)}" aria-label="${esc(nameOf(m.pid))}에게 답장">↩ 답장</button>
+      <span class="msg-time">${fmtTime(m.at)}</span>
+    </div>
   </div>`;
+}
+
+/** 답장 말풍선 위에 붙는 인용 블록 — 탭하면 원본으로 이동 */
+function replyQuote(rq) {
+  const who = rq.sender || (rq.pid ? nameOf(rq.pid) : '알 수 없음');
+  const target = rq.id ? ` data-target="${esc(rq.id)}"` : '';
+  return `<button class="msg-quote" type="button" data-act="jump-msg"${target} aria-label="${esc(who)}의 원래 메시지 보기">
+    <span class="rq-who">↳ ${esc(who)}</span>
+    <span class="rq-text">${esc(rq.text || '메시지')}</span>
+  </button>`;
+}
+
+/** 답장 미리보기용 한 줄 요약 (사진만 있으면 📷 사진) */
+function replySummary(m) {
+  const raw = String(m.text || '').trim();
+  if (raw) {
+    const first = raw.split(/\r?\n/).map((l) => l.trim()).find((l) => l.length) || raw;
+    return first.length > 80 ? `${first.slice(0, 80)}…` : first;
+  }
+  if (m.img) return '📷 사진';
+  return '메시지';
 }
 
 /** data:image/... 만 그림으로 그립니다(외부 주소·스크립트 차단) */
@@ -751,6 +780,7 @@ function safeImg(src) {
 
 function composer(kind, placeholder, inputId, opts = {}) {
   const maxLen = opts.maxLen || MAX_MSG;
+  const reply = kind === 'lounge' && S.replyTo ? replyBar(S.replyTo) : '';
   const pending = opts.photo ? safeImg(S.pendingImg) : '';
   const preview = pending
     ? `<div class="composer-preview">
@@ -769,11 +799,25 @@ function composer(kind, placeholder, inputId, opts = {}) {
     : `<input id="${inputId}" name="text" class="chat-input" type="text" maxlength="${maxLen}"
       placeholder="${esc(placeholder)}" autocomplete="off" value="${esc(S.drafts[kind] || '')}">`;
   return `<form class="composer" data-form="${kind}">
+    ${reply}
     ${preview}
     ${photoBtn}
     ${field}
     <button class="send" type="submit" aria-label="보내기">↑</button>
   </form>`;
+}
+
+/** 라운지 입력창 위 답장 대상 취소 바 — "↩ 남자 3호에게 답장: 원문…" */
+function replyBar(reply) {
+  const who = reply.sender || (reply.pid ? nameOf(reply.pid) : '알 수 없음');
+  return `<div class="composer-reply">
+    <span class="cr-icon" aria-hidden="true">↩</span>
+    <div class="cr-meta">
+      <b>${esc(who)}에게 답장</b>
+      <span>${esc(reply.text || '메시지')}</span>
+    </div>
+    <button class="preview-x" type="button" data-act="cancel-reply" aria-label="답장 취소">✕</button>
+  </div>`;
 }
 
 /** 입력한 만큼 늘어나는 라운지 입력창(최대 5줄 안팎) */
@@ -1448,6 +1492,7 @@ function handleAction(act, el, e) {
       S.tab = el.dataset.tab;
       S.chat = null;
       S.pendingImg = null;
+      S.replyTo = null;
       S.nearBottom = S.tab === 'lounge';
       S.scrollTo = 0;
       render();
@@ -1456,6 +1501,7 @@ function handleAction(act, el, e) {
       S.hostTab = el.dataset.tab;
       S.chat = null;
       S.pendingImg = null;
+      S.replyTo = null;
       S.nearBottom = el.dataset.tab === 'lounge';
       S.scrollTo = el.dataset.tab === 'lounge' ? 'bottom' : 0;
       render();
@@ -1474,6 +1520,7 @@ function handleAction(act, el, e) {
 
     /* 1:1 */
     case 'open-host-chat':
+      S.replyTo = null;
       if (S.me.role === 'host') {
         toast('참가자를 명단에서 골라 주세요');
         S.hostTab = 'roster';
@@ -1486,12 +1533,14 @@ function handleAction(act, el, e) {
       }
       break;
     case 'open-dm':
+      S.replyTo = null;
       S.chat = { kind: 'host', pid: el.dataset.id };
       S.scrollTo = 'bottom';
       S.nearBottom = true;
       render();
       break;
     case 'open-room':
+      S.replyTo = null;
       openRoomChat(el.dataset.room);
       break;
 
@@ -1546,6 +1595,43 @@ function handleAction(act, el, e) {
     case 'save-handles':
       saveHandlesFromInput();
       break;
+
+    /* 라운지 답장(대댓글) */
+    case 'reply': {
+      const id = el.dataset.id;
+      const src = S.data.lounge && S.data.lounge[id];
+      if (!src || src.type === 'system') {
+        toast('답장할 메시지를 찾지 못했어요');
+        break;
+      }
+      S.replyTo = { id, pid: src.pid, sender: nameOf(src.pid), text: replySummary(src) };
+      S.nearBottom = true;
+      S.scrollTo = 'bottom';
+      render();
+      const input = document.getElementById('loungeInput');
+      if (input) {
+        try {
+          input.focus({ preventScroll: true });
+        } catch (_) {
+          input.focus();
+        }
+        growChatInput(input);
+      }
+      break;
+    }
+    case 'cancel-reply':
+      S.replyTo = null;
+      render();
+      break;
+    case 'jump-msg': {
+      const target = msgNode(el.dataset.target);
+      if (!target) {
+        toast('원본 메시지를 찾지 못했어요 (오래된 대화는 지워질 수 있어요)');
+        break;
+      }
+      scrollToMsg(target);
+      break;
+    }
 
     /* 라운지 사진 (사회자) */
     case 'pick-photo': {
@@ -1660,8 +1746,13 @@ async function handleSubmit(kind, form) {
     const msg = { pid: isHost ? 'host' : S.me.pid, at: Date.now() };
     if (text) msg.text = text;
     if (attach) msg.img = attach;
+    // 답장이면 원본 메시지 정보를 함께 저장 (기존 메시지 구조는 그대로 둡니다)
+    if (S.replyTo) {
+      msg.replyTo = { id: S.replyTo.id, pid: S.replyTo.pid, sender: S.replyTo.sender, text: S.replyTo.text };
+    }
     S.drafts.lounge = '';
     S.pendingImg = null;
+    S.replyTo = null;
     S.nearBottom = true;
     S.scrollTo = 'bottom';
     await sendLounge(msg);
@@ -1705,6 +1796,37 @@ async function handleSubmit(kind, form) {
 
 async function sendLounge(msg) {
   await S.store.push('lounge', msg);
+}
+
+/** id 로 라운지 말풍선 DOM 찾기 */
+function msgNode(id) {
+  if (!id) return null;
+  const nodes = document.querySelectorAll('#scroll .msg[data-msg-id]');
+  for (let i = 0; i < nodes.length; i += 1) {
+    if (nodes[i].dataset.msgId === id) return nodes[i];
+  }
+  return null;
+}
+
+/** 해당 말풍선을 화면 가운데로 부드럽게 스크롤 + 잠깐 하이라이트 */
+function scrollToMsg(target) {
+  const sc = document.getElementById('scroll');
+  if (sc) {
+    const scRect = sc.getBoundingClientRect();
+    const tRect = target.getBoundingClientRect();
+    const pad = Math.max(0, (sc.clientHeight - tRect.height) / 2);
+    const top = Math.max(0, sc.scrollTop + (tRect.top - scRect.top) - pad);
+    try {
+      sc.scrollTo({ top, behavior: 'smooth' });
+    } catch (_) {
+      sc.scrollTop = top;
+    }
+  }
+  target.classList.remove('msg-flash');
+  void target.offsetWidth; // 애니메이션 다시 시작
+  target.classList.add('msg-flash');
+  if (target._flashTimer) clearTimeout(target._flashTimer);
+  target._flashTimer = setTimeout(() => target.classList.remove('msg-flash'), 1600);
 }
 
 /* ---------------- 사회자 라운지 사진 ----------------

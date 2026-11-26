@@ -1016,6 +1016,97 @@ p {
   color: var(--muted);
   padding: 0 4px;
 }
+/* 답장 — 말풍선 상단 인용 블록 */
+.msg-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--ink-2);
+  padding: 6px 10px 6px 9px;
+  border: 1px solid #ecdcd2;
+  border-left: 3px solid #e3a9c0;
+  border-radius: 4px 10px 10px 4px;
+  background: #fdf3ec;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.msg-quote:active {
+  background: #f8e5da;
+}
+.rq-who {
+  font-weight: 700;
+  color: #b25f80;
+  font-size: 11px;
+}
+.rq-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+/* 원본으로 이동했을 때 잠깐 반짝 */
+@keyframes reply-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(242, 114, 159, 0);
+  }
+  14%,
+  62% {
+    box-shadow: 0 0 0 3px rgba(242, 114, 159, 0.6);
+  }
+}
+.msg-flash .msg-body,
+.msg-flash .msg-quote {
+  animation: reply-flash 1.5s ease-out;
+}
+/* 시간 + ↩ 답장 버튼 줄 */
+.msg-foot {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 1px;
+  max-width: 100%;
+}
+.msg.mine .msg-foot {
+  flex-direction: row-reverse;
+}
+.msg-foot .msg-time {
+  padding: 0;
+}
+.reply-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 4px 9px;
+  margin: -2px 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.reply-btn:active {
+  background: #f9e3ec;
+  border-color: #f0cddb;
+  color: #b25f80;
+}
+@media (hover: hover) {
+  .reply-btn:hover {
+    background: #f9e3ec;
+    color: #b25f80;
+  }
+}
 .sysmsg {
   align-self: center;
   max-width: 92%;
@@ -1089,6 +1180,55 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* 라운지 답장 — 입력창 위 답장 대상 취소 바 */
+.composer-reply {
+  order: -1;
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #fdf1f5;
+  border: 1.5px solid #f6cddb;
+  border-radius: 14px;
+}
+.composer-reply .cr-icon {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f9dbe6;
+  color: #b25f80;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cr-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cr-meta b {
+  font-size: 12px;
+  color: #a85375;
+  line-height: 1.25;
+}
+.cr-meta span {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.composer-reply .preview-x {
+  background: #f7e3ea;
+  color: #a85375;
 }
 .photo-btn {
   flex: 0 0 auto;
