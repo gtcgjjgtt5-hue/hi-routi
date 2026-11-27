@@ -148,7 +148,7 @@
   function loadState() {
     const empty = {
       cookies: {}, tasks: {}, routines: [], stamps: {},
-      quests: {}, rewards: {}, badges: [], goldCookies: 0
+      quests: {}, rewards: {}, badges: [], goldCookies: 0, skips: {}
     };
     try {
       const raw = localStorage.getItem(STORE_KEY);
@@ -162,7 +162,8 @@
         quests: p.quests || {},
         rewards: p.rewards || {},
         badges: Array.isArray(p.badges) ? p.badges : [],
-        goldCookies: p.goldCookies || 0
+        goldCookies: p.goldCookies || 0,
+        skips: p.skips || {}
       };
     } catch (e) {
       return empty;
@@ -201,11 +202,19 @@
   }
 
   /* ── 고정 일상: 새 날 메모지에 자동으로 ─────────────── */
+  function skippedToday() {
+    if (!state.skips) state.skips = {};
+    if (!Array.isArray(state.skips[TODAY_KEY])) state.skips[TODAY_KEY] = [];
+    return state.skips[TODAY_KEY];
+  }
+
   function ensureTodayRoutines() {
     if (!state.routines.length) return;
     const list = tasks();
+    const skip = skippedToday();
     let changed = false;
     state.routines.forEach((r) => {
+      if (skip.indexOf(r.id) > -1) return;
       if (!list.some((t) => t.routineId === r.id)) {
         list.push({
           id: newId('t'),
@@ -359,6 +368,11 @@
     const finish = () => {
       if (gone) return;
       gone = true;
+      const gone_task = findTask(id);
+      if (gone_task && gone_task.routineId) {
+        const skip = skippedToday();
+        if (skip.indexOf(gone_task.routineId) < 0) skip.push(gone_task.routineId);
+      }
       state.tasks[TODAY_KEY] = tasks().filter((t) => t.id !== id);
       saveState();
       renderMemos();
