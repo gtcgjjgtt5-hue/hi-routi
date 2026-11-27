@@ -1,5 +1,5 @@
 /* 하이루티 HiRouti — 오프라인 껍데기 캐시 */
-const CACHE = 'hirouti-v9';
+const CACHE = 'hirouti-v10';
 const SHELL = [
   './',
   './index.html',
@@ -22,8 +22,21 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
+      .then((keys) => {
+        const updating = keys.some((k) => k !== CACHE);
+        return Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+          .then(() => ({ updating }));
+      })
+      .then((info) => self.clients.claim().then(() => info))
+      .then((info) => {
+        // 새 버전으로 갈아탈 때, 이미 열려 있는 화면은 한 번 새로 고침해서 바로 새 화면을 보게 한다.
+        if (!info.updating) return;
+        return self.clients.matchAll({ type: 'window' }).then((clients) => {
+          clients.forEach((client) => {
+            if (client.navigate) client.navigate(client.url).catch(() => {});
+          });
+        });
+      })
   );
 });
 
