@@ -68,31 +68,132 @@
           </div>
           <p class="fortune-text" id="fortuneText"></p>
           <div class="fortune-actions">
+            <button class="gold-btn" id="goldBtn" type="button" hidden><span aria-hidden="true">🥠</span> 황금 쿠키로 한 번 더 <b id="goldCount">0</b></button>
             <button class="ad-btn" id="adBtn" type="button"><span class="ad-tag">AD</span> 광고 보고 쿠키 한 번 더 뽑기</button>
           </div>
         </div>
       </div>
 
-      <!-- 떡메모지 패드 -->
-      <div class="pad" id="pad">
-        <div class="pad-head">
-          <span class="pad-date">DATE<b id="padDate">11.23</b></span>
-          <span class="pad-label">CHECKLIST</span>
+      <!-- 퀘스트 · 루티 도장깨기 -->
+      <section class="quest" id="quest" aria-label="오늘의 도장깨기">
+        <div class="quest-head">
+          <div class="quest-title">
+            <span class="kicker">ROUTI QUEST</span>
+            <h2>오늘의 도장깨기</h2>
+          </div>
+          <span class="quest-count">이번 주 도장 <b id="stampCount">0</b><span>/7</span></span>
         </div>
-        <div class="pad-sub">
-          <span id="padTitle">오늘의 체크리스트</span>
-          <span class="pad-count" id="padCount">0 / 0</span>
+
+        <div class="gates">
+          <div class="gate" data-gate="1">
+            <span class="gate-dot" aria-hidden="true"></span>
+            <span class="gate-body">
+              <span class="gate-label">1차 관문 돌파</span>
+              <span class="gate-sub">하나만 체크해도 열려요</span>
+            </span>
+            <span class="gate-check" aria-hidden="true">✧</span>
+          </div>
+          <div class="gate" data-gate="2">
+            <span class="gate-dot" aria-hidden="true"></span>
+            <span class="gate-body">
+              <span class="gate-label">루티 도장 쾅</span>
+              <span class="gate-sub">두 개 체크하면 오늘 도장</span>
+            </span>
+            <span class="gate-check" aria-hidden="true">✧</span>
+          </div>
         </div>
-        <ul class="list" id="list"></ul>
-        <form class="add" id="addForm" autocomplete="off">
+
+        <div class="stampboard" id="stampBoard" aria-label="이번 주 도장판"></div>
+
+        <div class="reward-row" id="rewardRow"></div>
+
+        <p class="quest-note">다 못 해도 괜찮아요. 두 개만 넘기면 도장이 쾅 찍혀요.</p>
+      </section>
+
+      <!-- 오늘의 떡메모지 3덩이 -->
+      <div class="memo-head">
+        <div>
+          <span class="kicker">TODAY&rsquo;S MEMO · <b id="memoDate">11.23</b></span>
+          <p class="memo-hint">손잡이(⠿)를 끌어서 다른 시간대로 옮겨 보세요</p>
+        </div>
+        <span class="memo-total" id="memoTotal">0 / 0</span>
+      </div>
+
+      <section class="memo" data-slot="morning" aria-label="오전 메모지">
+        <header class="memo-top">
+          <span class="memo-icon" aria-hidden="true">🌅</span>
+          <span class="memo-name">오전 <span class="memo-time">7–11시</span></span>
+          <span class="memo-count" data-count="morning">0 / 0</span>
+        </header>
+        <ul class="list" data-list="morning"></ul>
+        <p class="memo-empty" data-empty="morning">아직 비어 있어요 · 여기로 끌어다 놓아도 돼요</p>
+        <form class="add" data-add="morning" autocomplete="off">
           <span class="add-plus" aria-hidden="true">+</span>
-          <input id="addInput" type="text" maxlength="60" placeholder="할 일을 가볍게 적어 보세요" aria-label="할 일 추가" enterkeyhint="done">
+          <input type="text" maxlength="60" placeholder="오전에 할 일 한 줄" aria-label="오전 할 일 추가" enterkeyhint="done">
           <button class="add-go" type="submit" aria-label="추가">
             <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M3 8h9M8.4 4.4 12 8l-3.6 3.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </form>
-        <p class="pad-empty" id="padEmpty" hidden>아직 비어 있어요. 한 줄 적어 볼까요?</p>
-      </div>
+      </section>
+
+      <section class="memo" data-slot="afternoon" aria-label="오후 메모지">
+        <header class="memo-top">
+          <span class="memo-icon" aria-hidden="true">☀️</span>
+          <span class="memo-name">오후 <span class="memo-time">12–5시</span></span>
+          <span class="memo-count" data-count="afternoon">0 / 0</span>
+        </header>
+        <ul class="list" data-list="afternoon"></ul>
+        <p class="memo-empty" data-empty="afternoon">아직 비어 있어요 · 여기로 끌어다 놓아도 돼요</p>
+        <form class="add" data-add="afternoon" autocomplete="off">
+          <span class="add-plus" aria-hidden="true">+</span>
+          <input type="text" maxlength="60" placeholder="오후에 할 일 한 줄" aria-label="오후 할 일 추가" enterkeyhint="done">
+          <button class="add-go" type="submit" aria-label="추가">
+            <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M3 8h9M8.4 4.4 12 8l-3.6 3.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+      </section>
+
+      <section class="memo" data-slot="evening" aria-label="저녁 메모지">
+        <header class="memo-top">
+          <span class="memo-icon" aria-hidden="true">🌙</span>
+          <span class="memo-name">저녁 <span class="memo-time">6–11시</span></span>
+          <span class="memo-count" data-count="evening">0 / 0</span>
+        </header>
+        <ul class="list" data-list="evening"></ul>
+        <p class="memo-empty" data-empty="evening">아직 비어 있어요 · 여기로 끌어다 놓아도 돼요</p>
+        <form class="add" data-add="evening" autocomplete="off">
+          <span class="add-plus" aria-hidden="true">+</span>
+          <input type="text" maxlength="60" placeholder="저녁에 할 일 한 줄" aria-label="저녁 할 일 추가" enterkeyhint="done">
+          <button class="add-go" type="submit" aria-label="추가">
+            <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M3 8h9M8.4 4.4 12 8l-3.6 3.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+      </section>
+
+      <!-- 고정 일상 -->
+      <section class="routines" id="routines">
+        <header class="rt-head">
+          <div class="quest-title">
+            <span class="kicker">FIXED ROUTINE</span>
+            <h2>고정 일상</h2>
+          </div>
+          <button class="rt-toggle" id="rtToggle" type="button" aria-expanded="true" aria-controls="rtBody">접기</button>
+        </header>
+        <div class="rt-body" id="rtBody">
+          <p class="rt-desc">약 먹기, 물 마시기처럼 매일 하는 일은 여기에 두면 새 날 메모지에 조용히 올라와요.</p>
+          <ul class="rt-list" id="rtList"></ul>
+          <form class="rt-add" id="rtForm" autocomplete="off">
+            <input id="rtInput" type="text" maxlength="40" placeholder="예: 약 먹기" aria-label="고정 일상 추가">
+            <select id="rtSlot" aria-label="시간대">
+              <option value="morning">오전</option>
+              <option value="afternoon">오후</option>
+              <option value="evening">저녁</option>
+            </select>
+            <button type="submit">등록</button>
+          </form>
+          <p class="rt-note">안 한 날은 아무 표시도 남기지 않아요 · 다음 날 다시 올라와요</p>
+        </div>
+      </section>
 
       <p class="foot-note">체크는 자동 저장돼요 · 하루가 바뀌면 새 메모지</p>
 
@@ -129,13 +230,22 @@
           <div class="chart-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
           <div class="bars" id="bars"></div>
         </div>
-        <p class="chart-note">지난날 막대는 프로토타입용 샘플 기록이에요. 오늘 막대는 체크할 때마다 바로 바뀝니다.</p>
+        <p class="chart-note">지난날 막대는 프로토타입용 샘플 기록이에요. 오늘 막대는 체크할 때마다 바로 바뀝니다. 고정 일상은 이 달성률에서 조용히 빠져 있어요.</p>
       </div>
 
       <div class="stat-row">
         <div class="stat"><span class="stat-num" id="statDone">0</span><span class="stat-cap">오늘 한 일</span></div>
         <div class="stat"><span class="stat-num" id="statLeft">0</span><span class="stat-cap">남은 일</span></div>
         <div class="stat"><span class="stat-num" id="statBest">—</span><span class="stat-cap">이번 주 최고</span></div>
+      </div>
+
+      <div class="card badge-card">
+        <div class="badge-head">
+          <span class="kicker">ROUTI TITLE</span>
+          <span class="badge-week" id="badgeWeek">이번 주 도장 0 / 7</span>
+        </div>
+        <div class="badge-list" id="badgeList"></div>
+        <p class="badge-note" id="badgeNote">도장 세 개면 첫 칭호가 열려요.</p>
       </div>
 
       <div class="note-card">
@@ -165,6 +275,16 @@
         <p class="adder-count" id="adderCount">2</p>
         <button class="adder-skip" id="adderSkip" type="button">광고 닫기</button>
       </div>
+    </div>
+
+    <!-- 도장 축하 -->
+    <div class="pop" id="pop" hidden aria-live="polite">
+      <div class="pop-inner">
+        <div class="pop-seal" id="popSeal"><span>쾅!</span></div>
+        <p class="pop-text" id="popText">루티 도장 쾅!</p>
+        <p class="pop-sub" id="popSub">오늘 도장 완료</p>
+      </div>
+      <div class="confetti" id="confetti" aria-hidden="true"></div>
     </div>
 
     <div class="toast" id="toast" hidden></div>

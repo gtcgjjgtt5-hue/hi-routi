@@ -111,6 +111,17 @@
   const DAY_MS = 86400000;
 
   const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
+
+  /* ── 시간대(떡메모지 3덩이) ─────────────────────────── */
+  const SLOTS = [
+    { id: 'morning',   label: '오전', time: '7–11시',  icon: '🌅' },
+    { id: 'afternoon', label: '오후', time: '12–5시',  icon: '☀️' },
+    { id: 'evening',   label: '저녁', time: '6–11시',  icon: '🌙' }
+  ];
+  const SLOT = {};
+  SLOTS.forEach((s) => { SLOT[s.id] = s; });
+  const slotOf = (t) => (t && SLOT[t.slot] ? t.slot : 'morning');
 
   /* ── 날짜 ──────────────────────────────────────────── */
   function ymd(d) {
@@ -126,18 +137,32 @@
   const WEEK_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
   const TODAY = new Date();
+  TODAY.setHours(0, 0, 0, 0);
   const TODAY_KEY = ymd(TODAY);
+
+  function newId(prefix) {
+    return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
 
   /* ── 저장소 ────────────────────────────────────────── */
   function loadState() {
-    const empty = { cookies: {}, tasks: {} };
+    const empty = {
+      cookies: {}, tasks: {}, routines: [], stamps: {},
+      quests: {}, rewards: {}, badges: [], goldCookies: 0
+    };
     try {
       const raw = localStorage.getItem(STORE_KEY);
       if (!raw) return empty;
-      const parsed = JSON.parse(raw);
+      const p = JSON.parse(raw) || {};
       return {
-        cookies: parsed.cookies || {},
-        tasks: parsed.tasks || {}
+        cookies: p.cookies || {},
+        tasks: p.tasks || {},
+        routines: Array.isArray(p.routines) ? p.routines : [],
+        stamps: p.stamps || {},
+        quests: p.quests || {},
+        rewards: p.rewards || {},
+        badges: Array.isArray(p.badges) ? p.badges : [],
+        goldCookies: p.goldCookies || 0
       };
     } catch (e) {
       return empty;
@@ -151,12 +176,14 @@
 
   const state = loadState();
 
-  /* 첫 방문에만 가벼운 예시 세 줄 */
+  /* 첫 방문에만 가벼운 예시 — 고정 일상 1 + 메모 2 */
   if (!state.tasks[TODAY_KEY] && !localStorage.getItem(SEEDED_KEY)) {
+    if (!state.routines.length) {
+      state.routines = [{ id: 'rtseed1', text: '물 한 잔 마시기', slot: 'morning' }];
+    }
     state.tasks[TODAY_KEY] = [
-      { id: 'seed1', text: '물 한 잔 마시기', done: false },
-      { id: 'seed2', text: '5분 스트레칭', done: false },
-      { id: 'seed3', text: '좋아하는 노래 한 곡', done: false }
+      { id: 'seed2', text: '5분 스트레칭', done: false, slot: 'afternoon' },
+      { id: 'seed3', text: '좋아하는 노래 한 곡', done: false, slot: 'evening' }
     ];
     try { localStorage.setItem(SEEDED_KEY, '1'); } catch (e) {}
     saveState();
@@ -164,51 +191,142 @@
   if (!state.tasks[TODAY_KEY]) state.tasks[TODAY_KEY] = [];
 
   const tasks = () => state.tasks[TODAY_KEY];
+  const findTask = (id) => tasks().filter((t) => t.id === id)[0];
+  const doneCount = (list) => list.filter((t) => t.done).length;
+
+  /* 고정 일상은 달성률 계산에서 조용히 빠진다 */
+  function countable(list) {
+    const memo = (list || []).filter((t) => !t.routineId);
+    return memo.length ? memo : (list || []);
+  }
+
+  /* ── 고정 일상: 새 날 메모지에 자동으로 ─────────────── */
+  function ensureTodayRoutines() {
+    if (!state.routines.length) return;
+    const list = tasks();
+    let changed = false;
+    state.routines.forEach((r) => {
+      if (!list.some((t) => t.routineId === r.id)) {
+        list.push({
+          id: newId('t'),
+          text: r.text,
+          done: false,
+          slot: SLOT[r.slot] ? r.slot : 'morning',
+          routineId: r.id
+        });
+        changed = true;
+      }
+    });
+    if (changed) saveState();
+  }
 
   /* ── 할 일 그리기 ──────────────────────────────────── */
-  const listEl = $('#list');
-  const padEmpty = $('#padEmpty');
+  function makeItem(item) {
+    const li = document.createElement('li');
+    li.className = 'item'
+      + (item.done ? ' done' : '')
+      + (item.core ? ' core' : '')
+      + (item.routineId ? ' routine' : '');
+    li.dataset.id = item.id;
+    li.draggable = false;
 
-  function renderList() {
-    const items = tasks();
-    listEl.innerHTML = '';
-
-    items.forEach((item) => {
-      const li = document.createElement('li');
-      li.className = 'item' + (item.done ? ' done' : '');
-      li.dataset.id = item.id;
-
-      const box = document.createElement('button');
-      box.type = 'button';
-      box.className = 'box';
-      box.setAttribute('role', 'checkbox');
-      box.setAttribute('aria-checked', item.done ? 'true' : 'false');
-      box.setAttribute('aria-label', item.text + ' 완료 표시');
-
-      const text = document.createElement('span');
-      text.className = 'item-text';
-      text.textContent = item.text;
-
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'item-del';
-      del.setAttribute('aria-label', item.text + ' 지우기');
-      del.textContent = '×';
-
-      box.addEventListener('click', () => toggleItem(item.id, li));
-      del.addEventListener('click', () => removeItem(item.id, li));
-
-      li.append(box, text, del);
-      listEl.appendChild(li);
+    const grip = document.createElement('button');
+    grip.type = 'button';
+    grip.className = 'grip';
+    grip.setAttribute('aria-label', item.text + ' 옮기기');
+    grip.title = '끌어서 옮기기 · 눌러서 시간대 고르기';
+    grip.innerHTML = '<svg viewBox="0 0 10 16" width="10" height="16" aria-hidden="true"><g fill="currentColor">'
+      + '<circle cx="3" cy="3.6" r="1.15"/><circle cx="7" cy="3.6" r="1.15"/>'
+      + '<circle cx="3" cy="8" r="1.15"/><circle cx="7" cy="8" r="1.15"/>'
+      + '<circle cx="3" cy="12.4" r="1.15"/><circle cx="7" cy="12.4" r="1.15"/></g></svg>';
+    grip.addEventListener('pointerdown', onGripDown);
+    grip.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openSlotMenu(li);
+      }
     });
 
-    padEmpty.hidden = items.length > 0;
-    updateSummary();
-    renderRecord();
+    const box = document.createElement('button');
+    box.type = 'button';
+    box.className = 'box';
+    box.setAttribute('role', 'checkbox');
+    box.setAttribute('aria-checked', item.done ? 'true' : 'false');
+    box.setAttribute('aria-label', item.text + ' 완료 표시');
+
+    const text = document.createElement('span');
+    text.className = 'item-text';
+    text.textContent = item.text;
+
+    const tools = document.createElement('span');
+    tools.className = 'item-tools';
+
+    const star = document.createElement('button');
+    star.type = 'button';
+    star.className = 'item-star' + (item.core ? ' on' : '');
+    star.setAttribute('aria-pressed', item.core ? 'true' : 'false');
+    star.setAttribute('aria-label', item.text + ' 오늘의 핵심으로 표시');
+    star.title = '오늘의 핵심 ⭐';
+    star.textContent = item.core ? '★' : '☆';
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'item-del';
+    del.setAttribute('aria-label', item.text + ' 지우기');
+    del.textContent = '×';
+
+    box.addEventListener('click', () => toggleItem(item.id, li));
+    star.addEventListener('click', () => toggleCore(item.id));
+    del.addEventListener('click', () => removeItem(item.id, li));
+
+    if (item.routineId) li.title = '고정 일상 · 매일 올라와요';
+
+    /* 데스크톱에서는 글자를 잡고 끌어도 옮겨진다 */
+    li.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      if (e.target.closest('button')) return;
+      onGripDown(e);
+    });
+
+    tools.append(star, del);
+    li.append(grip, box, text, tools);
+    return li;
+  }
+
+  function renderMemos(enterId) {
+    SLOTS.forEach((s) => {
+      const ul = document.querySelector('[data-list="' + s.id + '"]');
+      const list = tasks()
+        .filter((t) => slotOf(t) === s.id)
+        .sort((a, b) => (b.core ? 1 : 0) - (a.core ? 1 : 0));
+      ul.innerHTML = '';
+      list.forEach((t) => {
+        const li = makeItem(t);
+        if (enterId && t.id === enterId) li.classList.add('enter');
+        ul.appendChild(li);
+      });
+    });
+    updateCounts();
+  }
+
+  function updateCounts() {
+    let total = 0;
+    let done = 0;
+    SLOTS.forEach((s) => {
+      const list = tasks().filter((t) => slotOf(t) === s.id);
+      const d = doneCount(list);
+      total += list.length;
+      done += d;
+      document.querySelector('[data-count="' + s.id + '"]').textContent = d + ' / ' + list.length;
+      document.querySelector('[data-empty="' + s.id + '"]').hidden = list.length > 0;
+      document.querySelector('.memo[data-slot="' + s.id + '"]')
+        .classList.toggle('all-done', list.length > 0 && d === list.length);
+    });
+    $('#memoTotal').textContent = done + ' / ' + total;
   }
 
   function toggleItem(id, li) {
-    const item = tasks().find((t) => t.id === id);
+    const item = findTask(id);
     if (!item) return;
     item.done = !item.done;
     saveState();
@@ -219,53 +337,503 @@
       if (box) box.setAttribute('aria-checked', item.done ? 'true' : 'false');
     }
 
-    updateSummary();
+    updateCounts();
     renderRecord();
+    if (item.done) afterCheck();
+    else renderQuest();
+  }
 
-    const all = tasks();
-    if (all.length && all.every((t) => t.done)) {
-      toast('오늘 체크리스트 완료! 루티가 박수 치는 중 👏');
-    }
+  function toggleCore(id) {
+    const item = findTask(id);
+    if (!item) return;
+    item.core = !item.core;
+    saveState();
+    renderMemos(item.id);
+    if (item.core) toast('오늘의 핵심으로 표시했어요 ⭐');
   }
 
   function removeItem(id, li) {
-    const idx = tasks().findIndex((t) => t.id === id);
-    if (idx < 0) return;
+    if (!li) return;
     li.classList.add('leaving');
-    li.addEventListener('animationend', () => {
+    let gone = false;
+    const finish = () => {
+      if (gone) return;
+      gone = true;
       state.tasks[TODAY_KEY] = tasks().filter((t) => t.id !== id);
       saveState();
-      renderList();
-    }, { once: true });
+      renderMemos();
+      renderQuest();
+      renderRecord();
+    };
+    li.addEventListener('animationend', finish, { once: true });
+    setTimeout(finish, 400);
   }
 
-  function addTask(text) {
-    const value = text.trim();
+  function addTask(text, slot) {
+    const value = (text || '').trim();
     if (!value) return;
-    tasks().unshift({
-      id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    const item = {
+      id: newId('t'),
       text: value,
-      done: false
-    });
+      done: false,
+      slot: SLOT[slot] ? slot : 'morning'
+    };
+    tasks().unshift(item);
     saveState();
-    renderList();
-    const first = listEl.firstElementChild;
-    if (first) first.classList.add('enter');
+    renderMemos(item.id);
+    renderQuest();
+    renderRecord();
   }
 
-  const addForm = $('#addForm');
-  const addInput = $('#addInput');
-  addForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    addTask(addInput.value);
-    addInput.value = '';
-    addInput.focus();
+  $$('.add').forEach((form) => {
+    const slot = form.dataset.add;
+    const input = form.querySelector('input');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      addTask(input.value, slot);
+      input.value = '';
+      input.focus();
+    });
   });
 
-  function updateSummary() {
-    const items = tasks();
-    const done = items.filter((t) => t.done).length;
-    $('#padCount').textContent = done + ' / ' + items.length;
+  /* ── 옮기기: 포인터 드래그 + 시간대 메뉴 ───────────── */
+  let drag = null;
+  const EDGE = 96;
+
+  function scroller() {
+    const app = document.querySelector('.app');
+    const cs = getComputedStyle(app);
+    if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll')) return app;
+    return null;
+  }
+
+  function onGripDown(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const li = e.currentTarget.closest ? e.currentTarget.closest('.item') : null;
+    if (!li) return;
+    if (drag) endDrag();
+    e.preventDefault();
+
+    drag = {
+      li: li,
+      id: li.dataset.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      active: false,
+      target: null,
+      ghost: null,
+      loop: 0,
+      offsetX: 0,
+      offsetY: 0
+    };
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    window.addEventListener('pointermove', onDragMove, { passive: false });
+    window.addEventListener('pointerup', onDragEnd);
+    window.addEventListener('pointercancel', onDragCancel);
+  }
+
+  function activateDrag() {
+    const li = drag.li;
+    const r = li.getBoundingClientRect();
+    const ghost = li.cloneNode(true);
+    ghost.classList.add('ghost');
+    ghost.classList.remove('enter');
+    ghost.style.width = r.width + 'px';
+    ghost.style.left = '0px';
+    ghost.style.top = '0px';
+    document.body.appendChild(ghost);
+
+    drag.ghost = ghost;
+    drag.offsetX = drag.startX - r.left;
+    drag.offsetY = drag.startY - r.top;
+    drag.active = true;
+
+    li.classList.add('dragging');
+    document.body.classList.add('dragging-mode');
+    placeGhost();
+    drag.loop = requestAnimationFrame(dragScroll);
+  }
+
+  function placeGhost() {
+    if (!drag || !drag.ghost) return;
+    const x = drag.lastX - drag.offsetX;
+    const y = drag.lastY - drag.offsetY;
+    drag.ghost.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(-1.1deg)';
+  }
+
+  function memoAt(x, y) {
+    const el = document.elementFromPoint(x, y);
+    return el ? el.closest('.memo') : null;
+  }
+
+  function updateTarget() {
+    if (!drag) return;
+    const m = memoAt(drag.lastX, drag.lastY);
+    if (m === drag.target) return;
+    if (drag.target) drag.target.classList.remove('drop');
+    drag.target = m;
+    if (m) m.classList.add('drop');
+  }
+
+  function dragScroll() {
+    if (!drag || !drag.active) return;
+    const h = window.innerHeight;
+    let dy = 0;
+    if (drag.lastY < EDGE) dy = -Math.min(16, (EDGE - drag.lastY) / 3 + 5);
+    else if (drag.lastY > h - EDGE) dy = Math.min(16, (drag.lastY - (h - EDGE)) / 3 + 5);
+    if (dy) {
+      const box = scroller();
+      if (box) box.scrollTop += dy;
+      else window.scrollBy(0, dy);
+      placeGhost();
+      updateTarget();
+    }
+    drag.loop = requestAnimationFrame(dragScroll);
+  }
+
+  function onDragMove(e) {
+    if (!drag) return;
+    drag.lastX = e.clientX;
+    drag.lastY = e.clientY;
+    if (!drag.active) {
+      const dist = Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY);
+      if (dist < 5) return;
+      activateDrag();
+    }
+    e.preventDefault();
+    placeGhost();
+    updateTarget();
+  }
+
+  function onDragEnd() {
+    if (!drag) return;
+    const d = drag;
+    const target = d.target;
+    const wasActive = d.active;
+    endDrag();
+    if (!wasActive) {
+      openSlotMenu(d.li);
+      return;
+    }
+    if (target) moveToSlot(d.id, target.dataset.slot, true);
+  }
+
+  function onDragCancel() {
+    if (!drag) return;
+    endDrag();
+  }
+
+  function endDrag() {
+    if (!drag) return;
+    if (drag.loop) cancelAnimationFrame(drag.loop);
+    if (drag.ghost && drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost);
+    if (drag.li) drag.li.classList.remove('dragging');
+    $$('.memo.drop').forEach((m) => m.classList.remove('drop'));
+    document.body.classList.remove('dragging-mode');
+    window.removeEventListener('pointermove', onDragMove);
+    window.removeEventListener('pointerup', onDragEnd);
+    window.removeEventListener('pointercancel', onDragCancel);
+    drag = null;
+  }
+
+  let menu = null;
+  function closeSlotMenu() {
+    if (!menu) return;
+    if (menu.parentNode) menu.parentNode.removeChild(menu);
+    menu = null;
+    document.removeEventListener('pointerdown', onDocDownForMenu, true);
+    document.removeEventListener('keydown', onEscForMenu);
+  }
+  function onDocDownForMenu(e) {
+    if (menu && !menu.contains(e.target)) closeSlotMenu();
+  }
+  function onEscForMenu(e) {
+    if (e.key === 'Escape') closeSlotMenu();
+  }
+
+  function openSlotMenu(li) {
+    closeSlotMenu();
+    const item = findTask(li.dataset.id);
+    if (!item) return;
+
+    const box = document.createElement('div');
+    box.className = 'slotmenu';
+    box.setAttribute('role', 'menu');
+    box.setAttribute('aria-label', '시간대 옮기기');
+
+    SLOTS.forEach((s) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'slotmenu-item' + (slotOf(item) === s.id ? ' now' : '');
+      b.setAttribute('role', 'menuitem');
+      b.innerHTML = '<span class="sm-icon" aria-hidden="true">' + s.icon + '</span>'
+        + '<span class="sm-label">' + s.label + '</span>'
+        + '<span class="sm-time">' + s.time + '</span>';
+      b.addEventListener('click', () => {
+        closeSlotMenu();
+        moveToSlot(item.id, s.id, false);
+      });
+      box.appendChild(b);
+    });
+
+    document.body.appendChild(box);
+    menu = box;
+
+    const r = li.getBoundingClientRect();
+    const w = box.offsetWidth;
+    const h = box.offsetHeight;
+    let left = Math.min(Math.max(10, r.left + 26), window.innerWidth - w - 10);
+    let top = r.bottom + 6;
+    if (top + h > window.innerHeight - 10) top = Math.max(10, r.top - h - 6);
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+    box.classList.add('in');
+
+    setTimeout(() => {
+      document.addEventListener('pointerdown', onDocDownForMenu, true);
+      document.addEventListener('keydown', onEscForMenu);
+    }, 0);
+  }
+
+  function moveToSlot(id, slot, fromDrag) {
+    const item = findTask(id);
+    if (!item || !SLOT[slot]) return;
+    if (slotOf(item) === slot) {
+      if (!fromDrag) toast('이미 ' + SLOT[slot].label + ' 메모에 있어요');
+      return;
+    }
+    item.slot = slot;
+    saveState();
+    renderMemos(item.id);
+    toast(SLOT[slot].label + ' 메모로 옮겼어요');
+  }
+
+  /* ── 퀘스트 · 루티 도장깨기 ────────────────────────── */
+  const REWARDS = [
+    { days: 1, icon: '🐣', label: '작은 거인', kind: 'badge' },
+    { days: 3, icon: '🥠', label: '황금 쿠키', kind: 'gold', amount: 1 },
+    { days: 5, icon: '🏅', label: '이불 탈출가', kind: 'badge' },
+    { days: 7, icon: '👑', label: '루티 마스터', kind: 'badge', gold: 2 }
+  ];
+  const PAW = '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">'
+    + '<ellipse cx="7.2" cy="8.6" rx="2.5" ry="3.1"/>'
+    + '<ellipse cx="12" cy="6.6" rx="2.4" ry="3.1"/>'
+    + '<ellipse cx="16.8" cy="8.6" rx="2.5" ry="3.1"/>'
+    + '<path d="M12 11.2c3.1 0 5.4 2.1 5.4 4.4 0 1.9-1.7 3-3.5 2.6-.9-.2-1.7-.2-2.6 0-1.8.4-3.5-.7-3.5-2.6 0-2.3 2.3-4.4 4.2-4.4z"/></svg>';
+
+  function questToday() {
+    if (!state.quests[TODAY_KEY]) state.quests[TODAY_KEY] = {};
+    return state.quests[TODAY_KEY];
+  }
+  function stampNeed() {
+    return Math.min(2, Math.max(tasks().length, 1));
+  }
+
+  function weekStamps() {
+    const start = new Date(TODAY.getTime());
+    start.setDate(start.getDate() - start.getDay());
+    const cells = [];
+    let n = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start.getTime() + i * DAY_MS);
+      const key = ymd(d);
+      const on = !!state.stamps[key];
+      if (on) n += 1;
+      cells.push({ d: d, key: key, on: on, today: key === TODAY_KEY, future: d.getTime() > TODAY.getTime() });
+    }
+    return { cells: cells, n: n, key: ymd(start) };
+  }
+
+  function grantRewards() {
+    const ws = weekStamps();
+    if (!state.rewards[ws.key]) state.rewards[ws.key] = {};
+    const rec = state.rewards[ws.key];
+    const got = [];
+    REWARDS.forEach((r) => {
+      if (ws.n < r.days || rec[r.days]) return;
+      rec[r.days] = true;
+      if (r.kind === 'gold') {
+        state.goldCookies = (state.goldCookies || 0) + (r.amount || 1);
+      } else if (r.label && state.badges.indexOf(r.label) < 0) {
+        state.badges.push(r.label);
+      }
+      if (r.gold) state.goldCookies = (state.goldCookies || 0) + r.gold;
+      got.push(r);
+    });
+    return got;
+  }
+
+  function afterCheck() {
+    const q = questToday();
+    const n = doneCount(tasks());
+    let level = 0;
+    if (n >= 1 && !q.first) { q.first = true; level = 1; }
+    if (n >= stampNeed() && !q.stamp) {
+      q.stamp = true;
+      state.stamps[TODAY_KEY] = true;
+      level = 2;
+    }
+    const got = level === 2 ? grantRewards() : [];
+    saveState();
+    renderQuest();
+    if (level === 2) celebrate('stamp', got);
+    else if (level === 1) celebrate('gate');
+  }
+
+  function renderQuest() {
+    const q = state.quests[TODAY_KEY] || {};
+    const need = stampNeed();
+
+    $$('.gate').forEach((g) => {
+      const key = g.dataset.gate === '1' ? 'first' : 'stamp';
+      g.classList.toggle('on', !!q[key]);
+      if (g.dataset.gate === '2') {
+        const sub = g.querySelector('.gate-sub');
+        if (sub) sub.textContent = need <= 1 ? '하나만 체크해도 오늘 도장' : '두 개 체크하면 오늘 도장';
+      }
+    });
+
+    const ws = weekStamps();
+    $('#stampCount').textContent = ws.n;
+
+    const board = $('#stampBoard');
+    board.innerHTML = '';
+    ws.cells.forEach((c) => {
+      const el = document.createElement('div');
+      el.className = 'stamp' + (c.on ? ' on' : '') + (c.today ? ' today' : '') + (c.future ? ' future' : '');
+      el.title = (c.d.getMonth() + 1) + '월 ' + c.d.getDate() + '일' + (c.on ? ' · 도장 완료' : '');
+
+      const day = document.createElement('span');
+      day.className = 'stamp-day';
+      day.textContent = WEEK_KO[c.d.getDay()];
+
+      const mark = document.createElement('span');
+      mark.className = 'stamp-mark';
+      if (c.on) mark.innerHTML = PAW;
+      else mark.textContent = String(c.d.getDate());
+
+      el.append(day, mark);
+      board.appendChild(el);
+    });
+
+    const row = $('#rewardRow');
+    row.innerHTML = '';
+    REWARDS.forEach((r) => {
+      const chip = document.createElement('span');
+      chip.className = 'rw' + (ws.n >= r.days ? ' on' : '');
+      chip.innerHTML = '<span class="rw-icon" aria-hidden="true">' + r.icon + '</span>'
+        + '<span class="rw-body"><b>' + r.days + '일</b>' + r.label + '</span>';
+      row.appendChild(chip);
+    });
+
+    renderGold();
+    renderBadges();
+  }
+
+  function renderGold() {
+    const btn = $('#goldBtn');
+    const n = state.goldCookies || 0;
+    btn.hidden = n <= 0;
+    $('#goldCount').textContent = n;
+  }
+
+  function renderBadges() {
+    const ws = weekStamps();
+    const week = $('#badgeWeek');
+    if (week) week.textContent = '이번 주 도장 ' + ws.n + ' / 7';
+
+    const list = $('#badgeList');
+    if (list) {
+      list.innerHTML = '';
+      if (!state.badges.length) {
+        const s = document.createElement('span');
+        s.className = 'badge-empty';
+        s.textContent = '아직 칭호가 없어요';
+        list.appendChild(s);
+      } else {
+        state.badges.forEach((b) => {
+          const chip = document.createElement('span');
+          chip.className = 'badge';
+          chip.textContent = b;
+          list.appendChild(chip);
+        });
+      }
+    }
+
+    const note = $('#badgeNote');
+    if (note) {
+      const next = REWARDS.filter((r) => ws.n < r.days)[0];
+      if (!next) note.textContent = '이번 주 도장을 다 모았어요. 루티가 꼬리를 흔드는 중!';
+      else if (next.kind === 'gold') note.textContent = '이번 주 ' + next.days + '일 도장이면 황금 포춘쿠키가 열려요.';
+      else note.textContent = '이번 주 ' + next.days + '일 도장이면 ‘' + next.label + '’ 칭호가 열려요.';
+    }
+  }
+
+  /* 도장 축하 */
+  let popTimer = null;
+  function celebrate(kind, got) {
+    const pop = $('#pop');
+    const seal = $('#popSeal');
+    const text = $('#popText');
+    const sub = $('#popSub');
+
+    pop.classList.toggle('big', kind === 'stamp');
+    seal.innerHTML = '<span>' + (kind === 'stamp' ? '쾅!' : '✧') + '</span>';
+    text.textContent = kind === 'stamp' ? '루티 도장 쾅!' : '1차 관문 돌파!';
+
+    if (kind === 'stamp') {
+      const ws = weekStamps();
+      const extra = got && got.length
+        ? ' · ' + got.map((r) => (r.kind === 'gold' ? '황금 쿠키 +' + (r.amount || 1) : r.label)).join(' · ')
+        : '';
+      sub.textContent = '이번 주 ' + ws.n + '번째 도장' + extra;
+    } else {
+      sub.textContent = '하나만 해도 오늘은 이긴 거예요';
+    }
+
+    confetti(kind === 'stamp' ? 26 : 12);
+
+    const todayCell = document.querySelector('.stamp.today');
+    if (kind === 'stamp' && todayCell) {
+      todayCell.classList.remove('just');
+      void todayCell.offsetWidth;
+      todayCell.classList.add('just');
+    }
+
+    pop.hidden = false;
+    pop.classList.remove('show');
+    void pop.offsetWidth;
+    pop.classList.add('show');
+
+    clearTimeout(popTimer);
+    popTimer = setTimeout(() => {
+      pop.classList.remove('show');
+      popTimer = setTimeout(() => { pop.hidden = true; }, 320);
+    }, kind === 'stamp' ? 1750 : 1200);
+
+    if (got && got.length) {
+      toast(got.map((r) => (r.kind === 'gold' ? '황금 쿠키 +' + (r.amount || 1) : '‘' + r.label + '’ 획득')).join(' · '));
+    }
+  }
+
+  function confetti(n) {
+    const layer = $('#confetti');
+    layer.innerHTML = '';
+    const colors = ['#D9B678', '#C79A52', '#E3B49E', '#AEB9A5', '#B6C5CF', '#E9CFA0'];
+    for (let i = 0; i < n; i++) {
+      const sp = document.createElement('span');
+      sp.className = 'cf';
+      sp.style.left = 50 + (Math.random() * 62 - 31) + '%';
+      sp.style.background = colors[i % colors.length];
+      sp.style.animationDelay = (Math.random() * 0.22).toFixed(2) + 's';
+      sp.style.animationDuration = (0.9 + Math.random() * 0.6).toFixed(2) + 's';
+      sp.style.setProperty('--dx', (Math.random() * 120 - 60).toFixed(0) + 'px');
+      sp.style.setProperty('--rot', (Math.random() * 540 - 270).toFixed(0) + 'deg');
+      if (i % 3 === 0) sp.style.borderRadius = '50%';
+      layer.appendChild(sp);
+    }
   }
 
   /* ── 포춘쿠키 ──────────────────────────────────────── */
@@ -296,7 +864,6 @@
     if (cracking) return;
     cracking = true;
     fortuneEl.classList.remove('opened', 'cracked', 'cracking');
-    // 애니메이션을 처음부터 다시 재생
     void fortuneEl.offsetWidth;
     fortuneEl.classList.add('cracking');
     setTimeout(() => {
@@ -379,12 +946,25 @@
     if (e.target === adder) closeAd();
   });
 
+  /* 황금 쿠키 — 광고 없이 한 번 더 */
+  $('#goldBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!state.goldCookies) return;
+    state.goldCookies -= 1;
+    saveState();
+    renderGold();
+    fortuneEl.classList.add('gold');
+    setTimeout(() => fortuneEl.classList.remove('gold'), 900);
+    reroll();
+    toast('황금 쿠키로 새 쿠키를 열었어요 🥠');
+  });
+
   /* ── 나의 기록 ─────────────────────────────────────── */
   const RING_C = 2 * Math.PI * 52;
 
   function pctOf(items) {
     if (!items || !items.length) return 0;
-    return Math.round((items.filter((t) => t.done).length / items.length) * 100);
+    return Math.round((doneCount(items) / items.length) * 100);
   }
 
   // 지난날 샘플 기록 (날짜 기반 고정값 — 새로고침해도 그대로)
@@ -401,24 +981,25 @@
       const d = new Date(TODAY.getTime() - i * DAY_MS);
       const key = ymd(d);
       const isToday = i === 0;
+      const list = state.tasks[key];
       let pct;
       let sample = false;
-      if (state.tasks[key] && state.tasks[key].length) {
-        pct = pctOf(state.tasks[key]);
+      if (list && list.length) {
+        pct = pctOf(countable(list));
       } else if (isToday) {
         pct = 0;
       } else {
         pct = samplePct(key);
         sample = true;
       }
-      out.push({ date: d, key, pct, isToday, sample, label: WEEK_KO[d.getDay()] });
+      out.push({ date: d, key: key, pct: pct, isToday: isToday, sample: sample, label: WEEK_KO[d.getDay()] });
     }
     return out;
   }
 
   function renderRecord() {
-    const items = tasks();
-    const done = items.filter((t) => t.done).length;
+    const items = countable(tasks());
+    const done = doneCount(items);
     const total = items.length;
     const pct = pctOf(items);
 
@@ -434,7 +1015,6 @@
     $('#statDone').textContent = done;
     $('#statLeft').textContent = Math.max(total - done, 0);
 
-    // 주간 막대
     const bars = $('#bars');
     const data = weekData();
     bars.innerHTML = '';
@@ -475,20 +1055,112 @@
     $('#statBest').textContent = Math.max.apply(null, data.map((d) => d.pct)) + '%';
   }
 
+  /* ── 고정 일상 관리 ────────────────────────────────── */
+  function renderRoutines() {
+    const ul = $('#rtList');
+    ul.innerHTML = '';
+
+    if (!state.routines.length) {
+      const li = document.createElement('li');
+      li.className = 'rt-empty';
+      li.textContent = '아직 등록한 고정 일상이 없어요';
+      ul.appendChild(li);
+    }
+
+    state.routines.forEach((r) => {
+      const li = document.createElement('li');
+      li.className = 'rt';
+
+      const txt = document.createElement('span');
+      txt.className = 'rt-text';
+      txt.textContent = r.text;
+
+      const sl = document.createElement('span');
+      sl.className = 'rt-slot';
+      sl.textContent = SLOT[r.slot] ? SLOT[r.slot].label : '오전';
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'rt-del';
+      del.setAttribute('aria-label', r.text + ' 고정 일상에서 지우기');
+      del.textContent = '×';
+      del.addEventListener('click', () => removeRoutine(r.id));
+
+      li.append(txt, sl, del);
+      ul.appendChild(li);
+    });
+  }
+
+  function addRoutine(text, slot) {
+    const value = (text || '').trim();
+    if (!value) return;
+    if (state.routines.some((r) => r.text === value)) {
+      toast('이미 고정 일상에 있어요');
+      return;
+    }
+    const r = { id: newId('rt'), text: value, slot: SLOT[slot] ? slot : 'morning' };
+    state.routines.push(r);
+    tasks().push({
+      id: newId('t'),
+      text: value,
+      done: false,
+      slot: r.slot,
+      routineId: r.id
+    });
+    saveState();
+    renderRoutines();
+    renderMemos();
+    renderQuest();
+    renderRecord();
+    toast('고정 일상에 등록했어요 · 내일도 조용히 올라와요');
+  }
+
+  function removeRoutine(id) {
+    const r = state.routines.filter((x) => x.id === id)[0];
+    if (!r) return;
+    state.routines = state.routines.filter((x) => x.id !== id);
+    state.tasks[TODAY_KEY] = tasks().filter((t) => !(t.routineId === id && !t.done));
+    saveState();
+    renderRoutines();
+    renderMemos();
+    renderQuest();
+    renderRecord();
+    toast('고정 일상에서 지웠어요');
+  }
+
+  $('#rtForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = $('#rtInput');
+    addRoutine(input.value, $('#rtSlot').value);
+    input.value = '';
+    input.focus();
+  });
+
+  $('#rtToggle').addEventListener('click', () => {
+    const body = $('#rtBody');
+    const btn = $('#rtToggle');
+    const open = body.hidden;
+    body.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? '접기' : '펼치기';
+  });
+
   /* ── 탭 전환 ───────────────────────────────────────── */
   const views = {
     today: $('#viewToday'),
     record: $('#viewRecord')
   };
-  document.querySelectorAll('.tab').forEach((tab) => {
+  $$('.tab').forEach((tab) => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+      $$('.tab').forEach((t) => t.classList.toggle('active', t === tab));
       Object.keys(views).forEach((k) => {
         views[k].classList.toggle('active', k === tab.dataset.view);
         views[k].hidden = k !== tab.dataset.view;
       });
       if (tab.dataset.view === 'record') renderRecord();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const sc = scroller();
+      if (sc) sc.scrollTo({ top: 0, behavior: 'smooth' });
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
 
@@ -508,15 +1180,23 @@
 
   /* ── 시작 ──────────────────────────────────────────── */
   $('#topDate').textContent = shortDate(TODAY) + ' ' + WEEK_EN[TODAY.getDay()];
-  $('#padDate').textContent = shortDate(TODAY);
+  $('#memoDate').textContent = shortDate(TODAY);
 
-  renderList();
+  ensureTodayRoutines();
+  renderMemos();
+  renderRoutines();
+  renderQuest();
+  renderRecord();
+
+  // 고정 일상 기본 시간대는 지금 시간에 맞춰
+  const hour = new Date().getHours();
+  $('#rtSlot').value = hour < 12 ? 'morning' : (hour < 18 ? 'afternoon' : 'evening');
 
   if (todayCookie() !== undefined) {
     showFortune(todayCookie(), false);
   }
 
-  /* 날짜가 바뀌면 새 메모지로 */
+  /* 날짜가 바뀌면 새 메모지로 (고정 일상은 새 날 자동 반영) */
   setInterval(() => {
     if (ymd(new Date()) !== TODAY_KEY) location.reload();
   }, 60000);
