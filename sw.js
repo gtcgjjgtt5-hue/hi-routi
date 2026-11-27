@@ -1,5 +1,5 @@
 /* 하이루티 HiRouti — 오프라인 껍데기 캐시 */
-const CACHE = 'hirouti-v6';
+const CACHE = 'hirouti-v7';
 const SHELL = [
   './',
   './index.html',
@@ -39,7 +39,7 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.indexOf('/love-studio/') !== -1) return;
 
   event.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-cache' })
       .then((res) => {
         if (res && res.ok) {
           const copy = res.clone();
