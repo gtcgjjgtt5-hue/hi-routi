@@ -1,10 +1,10 @@
 /* 하이루티 HiRouti — 오프라인 껍데기 캐시 */
-const CACHE = 'hirouti-v8';
+const CACHE = 'hirouti-v9';
 const SHELL = [
   './',
   './index.html',
-  './styles.css?v=2',
-  './app.js?v=2',
+  './styles.css?v=3',
+  './app.js?v=3',
   './manifest.json',
   './assets/icon-192.png',
   './assets/icon-512.png',
