@@ -18,7 +18,7 @@ export const SMOKE_OPTIONS = ['비흡연', '전자담배', '흡연'];
 export const LONG_DISTANCE_OPTIONS = ['가능', '불가능', '호감 시 가능'];
 
 const MIN_YEAR = 1940;
-export const MAX_YEAR = 1989; // 2026년 기준 만 37세 이상 · 1989년생 이하
+export const MAX_YEAR = 1992; // 2026년 연나이 35세 이상 · 1992년생 이하
 
 /* ---------------- 입력값 다듬기 ---------------- */
 

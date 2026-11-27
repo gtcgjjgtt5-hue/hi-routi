@@ -35,7 +35,7 @@ import {
   oneLineProfile,
   profileText,
   handleText,
-} from './applications.js?v=1';
+} from './applications.js?v=2';
 import {
   computeMatches,
   tallyVotes,

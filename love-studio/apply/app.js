@@ -19,7 +19,7 @@ import {
   makePin,
   findSameHandle,
   sideLabel,
-} from '../js/applications.js?v=1';
+} from '../js/applications.js?v=2';
 
 const esc = (v) =>
   String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -98,9 +98,9 @@ function renderForm(prefill = {}) {
 
       <div class="field">
         <label for="f-year">출생연도 <span class="req">필수</span></label>
-        <input class="apply-input" id="f-year" name="year" type="number" inputmode="numeric" min="1940" max="1989"
+        <input class="apply-input" id="f-year" name="year" type="number" inputmode="numeric" min="1940" max="1992"
           step="1" placeholder="예: 1988" value="${esc(prefill.year || '')}">
-        <div class="year-preview" id="yearPreview">1989년생 이하 · 2026년 연나이 38세 이상</div>
+        <div class="year-preview" id="yearPreview">1992년생 이하 · 2026년 연나이 35세 이상</div>
         <div class="field-msg" id="msg-year"></div>
       </div>
 
@@ -248,7 +248,7 @@ function updateYearPreview() {
   const raw = input.value.trim();
   const year = Number(raw);
   if (!raw) {
-    el.innerHTML = '1989년생 이하 · 2026년 연나이 38세 이상';
+    el.innerHTML = '1992년생 이하 · 2026년 연나이 35세 이상';
     setMsg('year', '');
     input.classList.remove('invalid');
     return;
@@ -262,7 +262,7 @@ function updateYearPreview() {
   if (year > MAX_YEAR) {
     const age = 2026 - year + 1;
     el.innerHTML = `<b>${year}년생</b> · 2026년 연나이 ${age}세`;
-    setMsg('year', `1989년생 이하만 신청할 수 있어요 (38세 이상)`, 'warn');
+    setMsg('year', `1992년생 이하만 신청할 수 있어요 (35세 이상)`, 'warn');
     input.classList.add('invalid');
     return;
   }
@@ -315,7 +315,7 @@ function validate(v) {
   const year = Number(v.year);
   if (!v.year) mark('year', '출생연도를 적어 주세요');
   else if (!Number.isInteger(year) || year < 1940) mark('year', '출생연도를 다시 확인해 주세요 (1940년생부터)');
-  else if (year > MAX_YEAR) mark('year', '1989년생 이하만 신청할 수 있어요 (38세 이상)');
+  else if (year > MAX_YEAR) mark('year', '1992년생 이하만 신청할 수 있어요 (35세 이상)');
 
   if (!v.region) mark('region', '거주 지역을 적어 주세요');
 
