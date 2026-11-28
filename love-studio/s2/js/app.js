@@ -1279,7 +1279,7 @@ function rosterCard(p) {
 
 async function loadHandlesFromApplications() {
   try {
-    const apps = await S.store.readRoot('applications/s2');
+    const apps = await S.store.readRoot('studio/applications/s2');
     const byPin = new Map();
     Object.values(apps || {}).forEach((a) => {
       if (a && a.pin) byPin.set(String(a.pin), a);
