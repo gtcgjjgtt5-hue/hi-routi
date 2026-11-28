@@ -46,6 +46,13 @@ import {
   pairKey,
 } from './matching.js?v=4';
 
+/* ---------------- 1기 종료 ---------------- */
+
+// 1기 '사랑의 스튜디오' 행사가 끝나 참가자 화면을 종료 안내로 바꿉니다.
+// 사회자(?host=1990) 화면과 2기 신청서(apply/)는 그대로예요.
+// 2기를 열 때는 이 값을 false 로 바꾸면 원래 입장·라운지 화면이 그대로 돌아옵니다.
+const SEASON_CLOSED = true;
+
 /* ---------------- 작은 도구들 ---------------- */
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -142,6 +149,10 @@ async function boot() {
   S.ready = true;
 
   if (code) {
+    if (SEASON_CLOSED && !hostParam) {
+      showClosed();
+      return;
+    }
     const id = parseInviteCode(code);
     if (id) {
       login({ role: 'participant', pid: id });
@@ -179,10 +190,30 @@ async function boot() {
   }
 
   if (saved && validMe(saved)) {
+    if (saved.role === 'host') {
+      login(saved, { silent: true });
+      return;
+    }
+    if (SEASON_CLOSED) {
+      showClosed();
+      return;
+    }
     login(saved, { silent: true });
     return;
   }
 
+  if (SEASON_CLOSED) {
+    // 1기 종료 — 참가자 입장 화면 대신 조용한 종료 안내만 보여 줍니다.
+    showClosed();
+    return;
+  }
+
+  render();
+}
+
+function showClosed() {
+  S.entry.step = 'closed';
+  S.entry.error = '';
   render();
 }
 
@@ -230,6 +261,10 @@ function saveHandles() {
 }
 
 function login(me, opts = {}) {
+  if (SEASON_CLOSED && me && me.role !== 'host') {
+    showClosed();
+    return;
+  }
   S.me = me;
   S.chat = null;
   S.pendingImg = null;
@@ -432,7 +467,11 @@ function render() {
     return;
   }
   if (!S.me) {
-    screen.innerHTML = entryScreen();
+    screen.innerHTML = S.entry.step === 'closed' ? closedScreen() : entryScreen();
+    return;
+  }
+  if (SEASON_CLOSED && S.me.role !== 'host') {
+    screen.innerHTML = closedScreen();
     return;
   }
 
@@ -480,10 +519,31 @@ function loadingScreen() {
   </div>`;
 }
 
+/* ---------------- 1기 종료 안내 ---------------- */
+
+function closedScreen(opts = {}) {
+  return `<div class="closed">
+    <div class="closed-deco"><span>✶</span><span>✶</span><span>✶</span></div>
+    <p class="closed-kicker">1990년대 감성 소개팅 쇼</p>
+    <h1 class="closed-logo">사랑의<br><em>스튜디오</em></h1>
+    <div class="closed-card ticket">
+      <span class="closed-stamp">END</span>
+      <p class="closed-title">1기 행사가<br>종료되었습니다</p>
+      <p class="closed-thanks">함께해 주셔서 감사합니다 💘</p>
+      <div class="closed-rule"></div>
+      <p class="closed-date">2026. 11. 26</p>
+    </div>
+    ${opts.hostLink ? `<button class="closed-host" data-act="entry-go-host">🎤 사회자로 입장</button>` : ''}
+    <p class="entry-foot"><span>선자리</span></p>
+  </div>`;
+}
+
 /* ---------------- 입장 화면 ---------------- */
 
 function entryScreen() {
   const e = S.entry;
+  // 1기 종료 뒤에는 참가자 입장 화면을 열지 않아요(사회자 비밀번호 화면만 그대로).
+  if (SEASON_CLOSED && e.step !== 'host') return closedScreen({ hostLink: true });
   const modeBadge =
     S.mode === 'demo'
       ? `<span class="badge demo">체험 모드</span>`
